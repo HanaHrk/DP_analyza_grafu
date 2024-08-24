@@ -1,0 +1,8 @@
+TRAIN_STEP = 0
+TRAIN_EPOCH = 0
+
+
+def reset():
+    global TRAIN_STEP, TRAIN_EPOCH
+    TRAIN_STEP = 0
+    TRAIN_EPOCH = 0
