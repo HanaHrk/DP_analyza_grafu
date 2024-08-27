@@ -11,6 +11,9 @@ config.paths.root
 
 import os
 
+WANDB_DIR = "wandb"
+WANDB_API_KEY_DIR = "wandb_private/wandbkey.txt"
+
 class paths:
     root = __file__[:-len("config.py")]    # directory path
     config = __file__

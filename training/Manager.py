@@ -105,6 +105,11 @@ class JsonManager(AbstractManager):
 class WandBManager(AbstractManager):
     def __init__(self, name, run_config, new_path=True):
         super().__init__(name, new_path)
+
+        wandb_api_key = self.load_wandb_api_key(config.WANDB_API_KEY_DIR)
+        os.environ["WANDB_API_KEY"] = wandb_api_key
+        os.environ["WANDB_BASE_URL"] = "https://api.wandb.ai"
+
         wandb.init(
             project=config.wandb.project,
             entity=config.wandb.entity,
@@ -125,6 +130,12 @@ class WandBManager(AbstractManager):
         wandb.define_metric("step/*", step_metric="TRAIN_STEP")
 
         wandb.define_metric("test/*", step_metric="TRAIN_EPOCH")
+
+    def load_wandb_api_key(self, path):
+        with open(path, "r", encoding='utf-8') as f:
+            data = f.read().replace('\n', '')
+        data = data.strip()
+        return data
 
     def _prepend_key(self, res, prepkey):
         d = {}

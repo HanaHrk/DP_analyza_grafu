@@ -91,8 +91,8 @@ class ChartImageTypeDataset(Dataset):
                 label = label.replace(" ", "_")
             class_id: int = config.dataset_info.chart_type_labels.index(label)
             y.append(class_id)
-            # for debugging, just 100 samples (for quicker loading)
-            # if len(y) == 100:
+            # for debugging, just 1000 samples (for quicker loading)
+            # if len(y) == 1000:
             #    break
         self.x = x
         self.y = y

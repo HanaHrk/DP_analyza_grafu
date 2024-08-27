@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 
 import config
 from dataset.charts_image_dataset import ChartImageTypeDataset
+from models.RESNetModel import ResNetModel
 from models.SimpleCNNModel import SimpleCNNModel
 from training import ProgressCounter
 from training.CustomEvaluatorTrainer import CustomTrainer, CustomEvaluator
@@ -18,29 +19,38 @@ def run(args):
 
     # load data
     train_dataset = ChartImageTypeDataset(dataset_part="train")
+    # 10% of training data --> validation data
+    train_dataset_size = int(0.9 * len(train_dataset))
+    val_dataset_size = len(train_dataset) - train_dataset_size
+    assert train_dataset_size + val_dataset_size == len(train_dataset)
+    train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, [train_dataset_size, val_dataset_size])
+
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
     test_dataset = ChartImageTypeDataset(dataset_part="test")
     test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
-    val_dataset = test_dataset
-    val_dataloader = test_dataloader
 
-    # defined_models = [SimpleCNNModel, SimpleCNNModelBig, SimpleCNNModelSecondDimension, SimpleCNNModelSecondDimensionBig]
-    name = f"{args.name}_model_SimpleCNNModel_lr{args.lr}_epochs{args.epochs}"
+
     number_of_classes = len(config.dataset_info.chart_type_labels)
 
-    model = SimpleCNNModel(
-        device=None, # torch.device("cpu"),
-        out_dim=number_of_classes,
-        dropout=args.dropout
+    model = ResNetModel(
+        device=None,
+        out_dim=number_of_classes
     )
+    # model = SimpleCNNModel(
+    #     device=None, # torch.device("cpu"),
+    #     out_dim=number_of_classes,
+    #     dropout=args.dropout
+    # )
+
+    name = f"{args.name}_model_{model.__class__.__name__}_lr{args.lr}_epochs{args.epochs}"
 
     # if one class should have different weight for loss function
     # example class B will have different weight contrary to the other classes
     # default = all classes same weight
     classw_tensor = torch.tensor([1.] * len(config.dataset_info.chart_type_labels))
-
 
     loss_function = torch.nn.CrossEntropyLoss(weight=classw_tensor.to(model.device))
     optimizer = torch.optim.AdamW(model.parameters())
@@ -56,6 +66,12 @@ def run(args):
     else:
         mngr = JsonManager(name, run_config)
 
+    print(f"Training data size: {len(train_dataset)}")
+    print(f"Validation data size: {len(val_dataset)}")
+    print(f"Test data size: {len(test_dataset)}")
+
+    print(f"Model: {model.__class__.__name__}, number of trainable params: {model.get_number_of_trainable_params()}")
+    print(f"Number of params: {model.get_number_of_all_params()}")
     # create a trainer object
     trainer = CustomTrainer(model, train_dataloader, optimizer, loss_function=loss_function, log_manager=mngr,
                             log_each_step=10, gradient_accumulation_steps=args.grad_accum_steps)
@@ -78,8 +94,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Chart type Image experiments -- dataset icpr2022_chart_image_dataset')
     parser.add_argument('--name', default='chart_type_image_experiment', type=str, help='Identifier of the run.')
     parser.add_argument('--lr', default=0.0005, type=float, help='learning rate')
-    parser.add_argument('--batch_size', default=64, type=int)
-    parser.add_argument('--epochs', default=100, type=int, help='number of epochs')
+    parser.add_argument('--batch_size', default=8, type=int)
+    parser.add_argument('--epochs', default=50, type=int, help='number of epochs')
     parser.add_argument('--grad_accum_steps', default=0, type=int, help='gradient accumulation steps <= 1 means no grad. accum.')
 
     parser.add_argument("--dropout", default=0.1, type=float)
