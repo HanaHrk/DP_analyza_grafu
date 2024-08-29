@@ -37,6 +37,7 @@ def run(args):
 
     model = ResNetModel(
         device=None,
+        use_pretrained_weights=False,
         out_dim=number_of_classes
     )
     # model = SimpleCNNModel(
@@ -95,7 +96,7 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='chart_type_image_experiment', type=str, help='Identifier of the run.')
     parser.add_argument('--lr', default=0.0005, type=float, help='learning rate')
     parser.add_argument('--batch_size', default=8, type=int)
-    parser.add_argument('--epochs', default=50, type=int, help='number of epochs')
+    parser.add_argument('--epochs', default=30, type=int, help='number of epochs')
     parser.add_argument('--grad_accum_steps', default=0, type=int, help='gradient accumulation steps <= 1 means no grad. accum.')
 
     parser.add_argument("--dropout", default=0.1, type=float)

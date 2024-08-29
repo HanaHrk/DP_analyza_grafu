@@ -4,16 +4,17 @@ import torch.nn.functional as F
 import torchvision.models as models
 
 class ResNetModel(torch.nn.Module):
-    def __init__(self, device, out_dim):
+    def __init__(self, device, use_pretrained_weights, out_dim):
         super().__init__()
         if device is None:
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         else:
             self.device = device
         print(f"Running on {self.device}")
-
+        self.use_pretrained_weights = use_pretrained_weights
+        print(f"Use pretrained weights: {self.use_pretrained_weights}")
         # Let's load pre-trained model ResNet-152
-        self.model = models.resnet152(pretrained=True)
+        self.model = models.resnet152(pretrained=True if self.use_pretrained_weights else False)
 
         # add fully-connected output layer
         num_features = self.model.fc.in_features
