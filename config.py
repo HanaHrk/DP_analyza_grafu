@@ -27,8 +27,6 @@ class paths:
     logger_config = os.path.join(root, "settings", "logger.conf")
     logger_logfile = os.path.join(log, "logger.log")
 
-    dataset_json_file = os.path.join(data, "friends_dataset/Subtask_2_2.json")
-
     dataset_train = os.path.join(data, "icpr2022_chart_image_dataset", "train")
     dataset_test = os.path.join(data, "icpr2022_chart_image_dataset", "test")
     # dataset_val = os.path.join(data, "icpr2022_chart_image_dataset", "dev")
@@ -55,4 +53,8 @@ class dataset_info:
         "vertical_box",
         "vertical_interval"
     ]
+
+    # only four categories we are interested in (I consider the hor and the ver bar ==> as one category)
+    desired_categories: [] = ["horizontal_bar", "vertical_bar", "scatter", "line"]
+
 
