@@ -56,3 +56,6 @@ class dataset_info:
         "vertical_interval"
     ]
 
+    # only four categories we are interested in (I consider the hor and the ver bar ==> as one category)
+    desired_categories: [] = ["horizontal_bar", "vertical_bar", "scatter", "line"]
+
