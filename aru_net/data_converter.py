@@ -54,14 +54,15 @@ def create_gt_mask_axis(img_file: str, json_file: str):
     with open(json_file, mode="r", encoding="utf8") as fr:
         json_data = json.load(fr)
 
-    x_axis_1_beginning_point_x: str = json_data["task4"]["output"]["axes"]["x-axis"][0]["tick_pt"]["x"]
-    x_axis_1_beginning_point_y: str = json_data["task4"]["output"]["axes"]["x-axis"][0]["tick_pt"]["y"]
-    x_axis_1_end_point_x: str = json_data["task4"]["output"]["axes"]["x-axis"][-1]["tick_pt"]["x"]
-    x_axis_1_end_point_y: str = json_data["task4"]["output"]["axes"]["x-axis"][-1]["tick_pt"]["y"]
+    if len(json_data["task4"]["output"]["axes"]["x-axis"]) > 0:
+        x_axis_1_beginning_point_x: str = json_data["task4"]["output"]["axes"]["x-axis"][0]["tick_pt"]["x"]
+        x_axis_1_beginning_point_y: str = json_data["task4"]["output"]["axes"]["x-axis"][0]["tick_pt"]["y"]
+        x_axis_1_end_point_x: str = json_data["task4"]["output"]["axes"]["x-axis"][-1]["tick_pt"]["x"]
+        x_axis_1_end_point_y: str = json_data["task4"]["output"]["axes"]["x-axis"][-1]["tick_pt"]["y"]
 
-    point1 = (int(x_axis_1_beginning_point_x), int(x_axis_1_beginning_point_y))
-    point2 = (int(x_axis_1_end_point_x), int(x_axis_1_end_point_y))
-    axis_gt_img = cv2.line(axis_gt_img, point1, point2, color=(255, 255, 255), thickness=1)
+        point1 = (int(x_axis_1_beginning_point_x), int(x_axis_1_beginning_point_y))
+        point2 = (int(x_axis_1_end_point_x), int(x_axis_1_end_point_y))
+        axis_gt_img = cv2.line(axis_gt_img, point1, point2, color=(255, 255, 255), thickness=1)
 
     if len(json_data["task4"]["output"]["axes"]["x-axis-2"]) > 0:
         x_axis_2_beginning_point_x: str = json_data["task4"]["output"]["axes"]["x-axis-2"][0]["tick_pt"]["x"]
@@ -73,14 +74,15 @@ def create_gt_mask_axis(img_file: str, json_file: str):
         point2 = int(x_axis_2_end_point_x), int(x_axis_2_end_point_y)
         axis_gt_img = cv2.line(axis_gt_img, point1, point2, color=(255, 255, 255), thickness=1)
 
-    y_axis_1_beginning_point_x: str = json_data["task4"]["output"]["axes"]["y-axis"][0]["tick_pt"]["x"]
-    y_axis_1_beginning_point_y: str = json_data["task4"]["output"]["axes"]["y-axis"][0]["tick_pt"]["y"]
-    y_axis_1_end_point_x: str = json_data["task4"]["output"]["axes"]["y-axis"][-1]["tick_pt"]["x"]
-    y_axis_1_end_point_y: str = json_data["task4"]["output"]["axes"]["y-axis"][-1]["tick_pt"]["y"]
+    if len(json_data["task4"]["output"]["axes"]["y-axis"]) > 0:
+        y_axis_1_beginning_point_x: str = json_data["task4"]["output"]["axes"]["y-axis"][0]["tick_pt"]["x"]
+        y_axis_1_beginning_point_y: str = json_data["task4"]["output"]["axes"]["y-axis"][0]["tick_pt"]["y"]
+        y_axis_1_end_point_x: str = json_data["task4"]["output"]["axes"]["y-axis"][-1]["tick_pt"]["x"]
+        y_axis_1_end_point_y: str = json_data["task4"]["output"]["axes"]["y-axis"][-1]["tick_pt"]["y"]
 
-    point1 = (int(y_axis_1_beginning_point_x), int(y_axis_1_beginning_point_y))
-    point2 = (int(y_axis_1_end_point_x), int(y_axis_1_end_point_y))
-    axis_gt_img = cv2.line(axis_gt_img, point1, point2, color=(255, 255, 255), thickness=1)
+        point1 = (int(y_axis_1_beginning_point_x), int(y_axis_1_beginning_point_y))
+        point2 = (int(y_axis_1_end_point_x), int(y_axis_1_end_point_y))
+        axis_gt_img = cv2.line(axis_gt_img, point1, point2, color=(255, 255, 255), thickness=1)
 
     if len(json_data["task4"]["output"]["axes"]["y-axis-2"]) > 0:
         y_axis_2_beginning_point_x: str = json_data["task4"]["output"]["axes"]["y-axis-2"][0]["tick_pt"]["x"]
@@ -97,7 +99,6 @@ def create_gt_mask_axis(img_file: str, json_file: str):
 
     # copy original img
     shutil.copy(img_file, os.path.join(config.paths.data, "img_ground_truth_masks"))
-    exit(0)
 
 
 def filter_task_4_data(img2json_train) -> dict[str, str]:
