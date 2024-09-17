@@ -21,12 +21,12 @@ class TestDataset(Dataset):
     def __getitem__(self, index):
         img_path = os.path.join(self.image_dir, self.images[index])
         # RGB
-        #image = np.array(Image.open(img_path).convert("RGB"))
+        image = np.array(Image.open(img_path).convert("RGB"))
         # Greyscale
-        image = Image.open(img_path).convert("L")
-        transform = transforms.Compose([transforms.Grayscale(num_output_channels=1)])
-        image = transform(image)
-        image=np.array(image, dtype=np.float32)
+        # image = Image.open(img_path).convert("L")
+        # transform = transforms.Compose([transforms.Grayscale(num_output_channels=1)])
+        # image = transform(image)
+        # image=np.array(image, dtype=np.float32)
 
         if self.padding: 
 

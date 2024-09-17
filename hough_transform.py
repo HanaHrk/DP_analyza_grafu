@@ -18,12 +18,12 @@ def detect_axes(img_file):
     edges = cv2.Canny(gray, 50, 100, apertureSize=3)
 
     # smaller_kernel = np.ones((2,2), np.uint8)
-    kernel = np.ones((7, 1), np.uint8)
+    # kernel = np.ones((7, 1), np.uint8)
     # img_erosion = cv2.erode(edges, smaller_kernel, iterations=1)
-    img_dilation = cv2.dilate(edges, kernel, iterations=1)
+    # img_dilation = cv2.dilate(edges, kernel, iterations=1)
 
-    cv2.imshow('edges ', edges)
-    cv2.imshow('Dilation', img_dilation)
+    # cv2.imshow('edges ', edges)
+    # cv2.imshow('Dilation', img_dilation)
 
 
     # Apply HoughLinesP method to
@@ -33,12 +33,12 @@ def detect_axes(img_file):
 
     lines_list = []
     lines = cv2.HoughLinesP(
-        img_dilation,  # Input edge image
+        edges,  # Input edge image
         1,  # Distance resolution in pixels
         np.pi / 180,  # Angle resolution in radians
         threshold=50,  # Min number of votes for valid line
         minLineLength=min_line_length,  # Min allowed length of line
-        maxLineGap=10  # Max allowed gap between line for joining them
+        maxLineGap=2  # Max allowed gap between line for joining them
     )
 
     if lines is not None:
@@ -55,9 +55,10 @@ def detect_axes(img_file):
         print("No lines detected.")
 
     # Save the result image
-    cv2.imshow('Detected Axes', image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    cv2.imwrite(img_file.replace(".jpg", "")+"_detectedLines.png", image)
+    # cv2.imshow('Detected Axes', image)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
 
 

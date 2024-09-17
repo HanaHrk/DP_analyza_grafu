@@ -111,12 +111,14 @@ def check_accuracy(loader, model, device="cuda"):
     dice_score = 0
     model.eval()
 
+    threshold = 0.5
+
     with torch.no_grad():
         for x, y in loader:
             x = x.to(device)
             y = y.to(device).unsqueeze(1) # unsqueeze because label doesn't have a channel
             preds = torch.sigmoid(model(x)) # change this if you use more than one class
-            preds = (preds > 0.5).float()
+            preds = (preds > threshold).float()
             num_correct += (preds == y).sum()
             num_pixels += torch.numel(preds) # numel = number of elements
             # calculate the similarity (only binary)
@@ -130,6 +132,42 @@ def check_accuracy(loader, model, device="cuda"):
     wandb.log({"dice_score": dice_score/len(loader)})
     model.train()
     return float(dice_score/len(loader))
+
+def save_predictions_as_imgs_without_threshold(loader, model, batch_size, output_dir="saved_images/", output_xml_dir= "saved_test_images_xml/", device="cuda", evaluate = False):
+    """Saves the current predictions of the training model as images. If random downsampling is disabled, evaluation can be run."""
+    print("Saving predicted images without threshold..")
+    model.eval()
+    max = len(loader.dataset)
+    for idx, (x, y) in enumerate(loader):
+        x = x.to(device=device)
+        with torch.no_grad():
+            preds = torch.sigmoid(model(x))
+        # In preds every image inside one batch is saved; for evaluation we need every prediction as a standalone image
+        splitSize = 1
+        if max - idx * batch_size >= batch_size:
+            splitSize = batch_size
+        else:
+            splitSize = max - idx * batch_size
+
+        preds = np.array_split(preds, splitSize)
+        y = y.unsqueeze(1)
+        y = torch.tensor_split(y, splitSize)
+        # save predicted baselines as img
+        for i in range(len(preds)):
+            image_name = loader.dataset.images[idx * batch_size + i]  # name of original image
+            # delete data endings
+            if str.endswith(image_name, '.jpg') or str.endswith(image_name, '.JPG') or str.endswith(image_name, '.png'):
+                image_name = image_name[:len(image_name) - 4]
+            elif str.endswith(image_name, '.jpeg'):
+                image_name = image_name[:len(image_name) - 5]
+
+            aImgPath = f"{output_dir}/{image_name}.png"
+            torchvision.utils.save_image(
+                preds[i], aImgPath
+            )
+
+            # original mask
+            torchvision.utils.save_image(y[i], f"{output_dir}/{image_name}_original.png")
 
 def save_predictions_as_imgs(loader, model, batch_size, output_dir="saved_images/", output_xml_dir= "saved_test_images_xml/", device="cuda", evaluate = False):
     """Saves the current predictions of the training model as images. If random downsampling is disabled, evaluation can be run."""
@@ -282,7 +320,7 @@ def save_test_predictions_as_imgs(loader, model, image_height, image_width, padd
         combineImages(original_image_path=image_path, baseline_image_path=aImgPath_upscaled, folder=output_dir, image_name=image_name)
 
         # generate xml
-        gen_page(in_img_path=image_path, line_mask = preds[0,:,:], id=image_name, output_dir=output_xml_dir)
+        # gen_page(in_img_path=image_path, line_mask = preds[0,:,:], id=image_name, output_dir=output_xml_dir)
 
 
     model.train()

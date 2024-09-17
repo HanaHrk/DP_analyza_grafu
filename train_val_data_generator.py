@@ -44,15 +44,15 @@ if __name__ == '__main__':
     for file in files_list:
         file = file.strip()
         file = os.path.join(config.paths.data, "img_ground_truth_masks", os.path.basename(file))
-        shutil.copy(file, "data/val_images")
+        shutil.copy(file, "data/axis_analysis/val_images")
         mask_file = os.path.join(config.paths.data, "img_ground_truth_masks", os.path.basename(file).replace(".jpg", "_GT0.jpg"))
-        shutil.copy(mask_file, "data/val_masks")
+        shutil.copy(mask_file, "data/axis_analysis/val_masks/"+os.path.basename(file).replace("_GT0.jpg", ".jpg"))
 
     with open("train_data_list.txt", mode="r", encoding="utf8") as fw:
         files_list = fw.readlines()
     for file in files_list:
         file = file.strip()
         file = os.path.join(config.paths.data, "img_ground_truth_masks", os.path.basename(file))
-        shutil.copy(file, "data/train_images")
+        shutil.copy(file, "data/axis_analysis/train_images")
         mask_file = os.path.join(config.paths.data, "img_ground_truth_masks", os.path.basename(file).replace(".jpg", "_GT0.jpg"))
-        shutil.copy(mask_file, "data/train_masks")
+        shutil.copy(mask_file, "data/axis_analysis/train_masks/"+os.path.basename(file).replace("_GT0.jpg", ".jpg"))

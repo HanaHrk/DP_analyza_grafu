@@ -9,11 +9,11 @@ from utils import(
 
 # Params
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-NUM_WORKERS = 2
+NUM_WORKERS = 0
 # Set the correct parameters according to the model
-IMAGE_HEIGHT = 1024
-IMAGE_WIDTH = 1024
-PADDING = True # True when the model was trained with data augmentation / random downsampling
+IMAGE_HEIGHT = 512
+IMAGE_WIDTH = 512
+PADDING = False # True when the model was trained with data augmentation / random downsampling
 PIN_MEMORY = True
 
 # ARU-NET Params
@@ -23,19 +23,19 @@ FEAT_ROOT = 8 # starting root for features
 FILTER_SIZE = 3 # size of kernel
 POOL_SIZE = 2 # size of pooling
 ACTIVATION_NAME = "relu" # choose "relu" or "elu"
-MODEL = "aru" # choose "aru", "ru", or "u"
+MODEL = "u" # choose "aru", "ru", or "u"
 NUM_SCALES = 5 # amount of scaled images you want to use you (e.g. 3: original image and two downscaled versions)
 
 # Model
-CHECKPOINT = "models\cbad_2019.tar"
+CHECKPOINT = "unet_trained_checkpoints/my_checkpoint_best_dice_score.pth.tar"
 
 # Paths
-TEST_IMG_DIR = "data\cbad_2017_less_val/cbad_2017_simple_val_images/"
+TEST_IMG_DIR = "data/axis_analysis/val_images/"
 TEST_OUTPUT_DIR = "saved_test_images/"
 TEST_OUTPUT_XML_DIR = "saved_test_images_xml/"
 
 # Evaluation 
-EVALUATE = True # if you want to evaluate with Transkribus Baseline Evaluation after inference
+EVALUATE = False # if you want to evaluate with Transkribus Baseline Evaluation after inference
 EVALUATION_DIR = "./evaluation/" # folder with Transkribus jar (trans.jar)
 TRUTH_XML_DIR = "data\cbad_2017_less_val/cbad_2017_simple_val_xml/" # ground truth of test images
 
@@ -52,7 +52,7 @@ def main():
         num_scales = NUM_SCALES,
     )
 
-    model = create_aru_net(in_channels = 1, out_channels=1, model_kwargs = model_kwargs).to(DEVICE)
+    model = create_aru_net(in_channels = 3, out_channels=1, model_kwargs = model_kwargs).to(DEVICE)
     test_loader = get_test_loaders(TEST_IMG_DIR, IMAGE_HEIGHT, IMAGE_WIDTH, PADDING, NUM_WORKERS, PIN_MEMORY)
     load_checkpoint(torch.load(CHECKPOINT), model)
 

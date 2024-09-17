@@ -31,15 +31,18 @@ class NewDataset(Dataset):
             mask_path = os.path.join(self.mask_dir, self.images[index])#.replace(".JPG", ".png"))
 
         # Training Images as RGB
-        #image = np.array(Image.open(img_path).convert("RGB"))
+        image = np.array(Image.open(img_path).convert("RGB"))
         # Greyscale
-        image = Image.open(img_path).convert("L")
-        transform = transforms.Compose([transforms.Grayscale(num_output_channels=1)])
-        image = transform(image)
-        image=np.array(image, dtype=np.float32)
+        # image = Image.open(img_path).convert("L")
+        # transform = transforms.Compose([transforms.Grayscale(num_output_channels=1)])
+        # image = transform(image)
+        # image=np.array(image, dtype=np.float32)
 
         mask = np.array(Image.open(mask_path).convert("L"), dtype=np.float32) # L = greyscale
-        mask[mask == 255.0] = 1.0 # because we do a sigmoid on the last activation , we make sure that the correct labels are used
+        # due to the jpg quality --> instead of == 255
+        mask[mask <= 250] = 0.0  # --> we must ensure that mask is binary image
+        mask[mask > 250] = 1.0 # because we do a sigmoid on the last activation , we make sure that the correct labels are used
+
 
         if self.random_downsampling:
 

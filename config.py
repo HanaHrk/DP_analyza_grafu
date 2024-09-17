@@ -34,7 +34,7 @@ class paths:
     # dataset_val = os.path.join(data, "icpr2022_chart_image_dataset", "dev")
 
 class wandb:
-    project = "chart_type_image_experiment"
+    project = "axis_analysis"
     entity = "jimar"
 
 class dataset_info:
