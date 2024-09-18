@@ -8,6 +8,10 @@ This framework includes the PyTorch version of the [ARU-Net](https://github.com/
 3. Install https://github.com/CyberZHG/torch-same-pad (pip install git+https://github.com/CyberZHG/torch-same-pad.git).
 4. If needed, set the PYTHONPATH to the project location.
 
+To install torch_same_pad
+pip install git+https://github.com/CyberZHG/torch-same-pad.git
+
+
 ## Training
 1. Put your training dataset inside the "/data" folder: Split images and ground truth of the training and validation part into seperate folders. (e.g. data/dataset/training_images and data/dataset/training_masks; same for validation). Make sure your image masks are binarized.
 2. Set the training params on the top of train.py. Verify that the correct paths are set. Evaluation after every epochs does only work without random downsampling.
@@ -18,3 +22,9 @@ This framework includes the PyTorch version of the [ARU-Net](https://github.com/
 1. Put your testing dataset inside the "/data" folder (e.g. data/dataset/testing_images). For optional evaluation, also add your xml ground truth to the "/data" folder (e.g. data/dataset/testing_xml).
 2. Set the testing params and the correct model on the top of test.py. Example models and their correct params are given inside "/models". Verify that the correct paths are set. Set "EVALUATION" to True if you want to evaluate the generated xmls with the ground truth.
 3. Run test.py. Images are saved into "/saved_test_images", xmls in "/saved_test_images_xml". If enabled, evaluation scores are printed out and saved inside an evaluation[...].txt file in the project folder.
+
+
+## Predicting images in folder
+1. Use `chart_axis_prediction.py` script as follows:
+ python `chart_axis_prediction.py <test_img_folder> <test_output_folder>` e.g. `python chart_axis_prediction.py data/test_sample_images test_sample_images_predictions` 
+2. 

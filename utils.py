@@ -1,3 +1,5 @@
+from typing import Union
+
 import torch
 import torchvision 
 import torchvision.transforms as transforms
@@ -239,7 +241,7 @@ def save_predictions_as_imgs(loader, model, batch_size, output_dir="saved_images
                 gen_page(in_img_path=image_path, line_mask = preds[i][0,:,:], id=image_name, output_dir=output_xml_dir)
     model.train()
 
-def save_test_predictions_as_imgs(loader, model, image_height, image_width, padding, output_dir ="saved_test_images/", output_xml_dir= "saved_test_images_xml/", device="cuda"):
+def save_test_predictions_as_imgs(loader, model, image_height, image_width, padding, output_dir ="saved_test_images/", device="cuda", threshold: Union[None, float]=0.5):
     """Saves images predicted by the testing model. If the model has been trained with random downsampling, padding must be enabled."""
     model.eval()
     loop = tqdm(loader)
@@ -247,7 +249,10 @@ def save_test_predictions_as_imgs(loader, model, image_height, image_width, padd
         x = x.to(device=device)
         with torch.no_grad():
             preds = torch.sigmoid(model(x))
-            preds = (preds > 0.5).float()
+            if threshold is not None:
+                preds = (preds > threshold).float()
+            # if the threshold is None ==> no thresholding of the prediction--> grayscale image
+
 
         image_name = loader.dataset.images[idx] # name of original image
 
