@@ -22,7 +22,7 @@ class paths:
     data = os.path.join(root, "data")
     log = os.path.join(root, "log")
 
-    train_bin = os.path.join(bin, "chart_type_image_experiment")
+    train_bin = os.path.join(bin, "data_values_segmentation")
 
     logger_config = os.path.join(root, "settings", "logger.conf")
     logger_logfile = os.path.join(log, "logger.log")
@@ -34,7 +34,7 @@ class paths:
     # dataset_val = os.path.join(data, "icpr2022_chart_image_dataset", "dev")
 
 class wandb:
-    project = "axis_analysis"
+    project = "data_values_segmentation_vertical_bars"
     entity = "jimar"
 
 class dataset_info:

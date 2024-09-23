@@ -51,10 +51,11 @@ NUM_SCALES = 5 # amount of scaled images you want to use you (e.g. 3: original i
 # VAL_IMG_DIR = os.path.join(config.paths.data, "axis_analysis", "sample_images/")
 # VAL_MASK_DIR = os.path.join(config.paths.data, "axis_analysis", "sample_masks/")
 
-TRAIN_IMG_DIR = os.path.join(config.paths.data, "axis_analysis", "train_images/")
-TRAIN_MASK_DIR = os.path.join(config.paths.data, "axis_analysis", "train_masks/")
-VAL_IMG_DIR = os.path.join(config.paths.data, "axis_analysis", "val_images/")
-VAL_MASK_DIR = os.path.join(config.paths.data, "axis_analysis", "val_masks/")
+CHART_TYPE = "vertical_bar_chart"
+TRAIN_IMG_DIR = os.path.join(config.paths.data, "data_values_segmentation", CHART_TYPE, "train_images/")
+TRAIN_MASK_DIR = os.path.join(config.paths.data, "data_values_segmentation", CHART_TYPE, "train_masks/")
+VAL_IMG_DIR = os.path.join(config.paths.data, "data_values_segmentation", CHART_TYPE, "val_images/")
+VAL_MASK_DIR = os.path.join(config.paths.data, "data_values_segmentation", CHART_TYPE, "val_masks/")
 SAVED_IMAGES = "saved_images/"
 CHECKPOINT_PATH = "my_checkpoint.pth.tar"
 
@@ -126,7 +127,7 @@ def main():
     os.environ["WANDB_BASE_URL"] = "https://api.wandb.ai"
 
     # Configure wandb (Weights & Biases)
-    wandb.init(project=config.wandb.project, entity=config.wandb.entity, name="ARU-net experiment", config=configuration)
+    wandb.init(project=config.wandb.project, entity=config.wandb.entity, name="U-net experiment_"+CHART_TYPE, config=configuration)
 
     model_kwargs = dict(
         scale_space_num = SCALE_SPACE_NUM,
