@@ -27,7 +27,7 @@ def load_wandb_api_key(path):
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 LEARNING_RATE = 0.001
 BATCH_SIZE = 32
-NUM_EPOCHS = 200
+NUM_EPOCHS = 150
 NUM_WORKERS = 0
 IMAGE_HEIGHT = 512
 IMAGE_WIDTH = 512
