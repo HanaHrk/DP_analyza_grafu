@@ -14,13 +14,13 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 def load_images(path, colorMode=0):
     imgs = []
     masks = []
-    for fn in os.listdir(os.path.join(path, "sample_images")):
+    for fn in os.listdir(os.path.join(path, "train_images")):
         if colorMode == 0:
-            img = cv2.imread(os.path.join(path, "sample_images", fn), cv2.IMREAD_GRAYSCALE)
+            img = cv2.imread(os.path.join(path, "train_images", fn), cv2.IMREAD_GRAYSCALE)
         else:
-            img = cv2.imread(os.path.join(path, "sample_images", fn), cv2.IMREAD_COLOR)
+            img = cv2.imread(os.path.join(path, "train_images", fn), cv2.IMREAD_COLOR)
         if img is None:
-            print("Could not load image: ", os.path.join(path, "sample_images", fn))
+            print("Could not load image: ", os.path.join(path, "train_images", fn))
         if img is None: continue
 
         # resize image
@@ -30,7 +30,7 @@ def load_images(path, colorMode=0):
         # img = np.reshape(img, img.shape + (1,))
         # print("Img shape:", img.shape)
 
-        mask = cv2.imread(os.path.join(path, "sample_masks", fn), cv2.IMREAD_GRAYSCALE)
+        mask = cv2.imread(os.path.join(path, "train_masks", fn), cv2.IMREAD_GRAYSCALE)
         # resize  mask
         mask = cv2.resize(mask, (512, 512), interpolation=cv2.INTER_NEAREST)
 
@@ -60,7 +60,7 @@ def myImageDataGenerator(path, batch_size, size, seed=10):
 
     image_generator = image_datagen.flow_from_directory(
         path,
-        classes = ["sample_images"],
+        classes = ["train_images"],
         color_mode='bgr',
         class_mode=None,
         target_size=(size[0], size[1]),
@@ -69,7 +69,7 @@ def myImageDataGenerator(path, batch_size, size, seed=10):
     )
     mask_generator = mask_datagen.flow_from_directory(
         path,
-        classes=["sample_masks"],
+        classes=["train_masks"],
         color_mode='grayscale',
         class_mode=None,
         target_size=(size[0], size[1]),
