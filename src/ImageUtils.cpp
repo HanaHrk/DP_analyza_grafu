@@ -3,8 +3,6 @@
 //
 
 #include "ImageUtils.h"
-#include <onnx>
-
 
 cv::Mat load_image(const std::string &path) {
     return imread(path, cv::IMREAD_GRAYSCALE);

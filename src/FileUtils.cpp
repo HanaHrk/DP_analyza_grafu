@@ -5,6 +5,7 @@
 #include <Windows.h>
 #endif
 #include <functional>
+#include <stack>
 #include <vector>
 #include <__msvc_filebuf.hpp>
 
@@ -34,8 +35,11 @@ std::vector<std::string> find_all_images(const std::string &root_path) {
         throw e;
     }
 #else
-    std::function<void(const std::string &, std::vector<std::string> &)> callback = [&
-            ](const std::string &root, std::vector<std::string> &collected_paths) {
+    std::vector<std::string> folders;
+    folders.push_back(root_path);
+    while (!folders.empty()) {
+        const auto root = folders.back();
+        folders.erase(folders.begin() + folders.size() - 1);
         WIN32_FIND_DATA data;
         const std::string search_path = root + "\\*.*";
         const auto hFind = FindFirstFile(search_path.c_str(), &data);
@@ -52,17 +56,16 @@ std::vector<std::string> find_all_images(const std::string &root_path) {
             std::string full_path = root + "\\" + file_name;
 
             if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-                callback(full_path, collected_paths);
+                folders.push_back(full_path);
             } else {
                 std::string extension = file_name.substr(file_name.find_last_of('.'));
                 if (find(extensions.begin(), extensions.end(), extension) != extensions.end()) {
-                    collected_paths.push_back(full_path);
+                    image_files.push_back(full_path);
                 }
             }
         } while (FindNextFile(hFind, &data));
         FindClose(hFind);
-    };
-    callback(root_path, image_files);
+    }
 #endif
     return image_files;
 }

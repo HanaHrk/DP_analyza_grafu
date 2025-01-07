@@ -1,6 +1,6 @@
 #pragma once
 
-#if ACCELERATE_GPU
+#if ACCELERATE_TENSOR_RT
 
 #include <NvInfer.h>
 #include <iostream>
