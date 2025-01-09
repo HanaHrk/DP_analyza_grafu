@@ -48,7 +48,6 @@ OutTensor TensorRTInference::predict(const cv::Mat &image, const std::size_t out
 OutParTensors TensorRTInference::predict_all(const std::vector<cv::Mat> &images, const std::size_t out_class) const {
     OutParTensors out_par_tensors;
     cudaEvent_t start, end;
-    cudaError_t err;
 
     typedef struct TmpDataHolder {
         cudaEvent_t current_start{}, current_end{};
@@ -63,7 +62,7 @@ OutParTensors TensorRTInference::predict_all(const std::vector<cv::Mat> &images,
     } TmpDataHolder;
     std::vector<TmpDataHolder> tmp_data;
 
-    err = cudaEventCreate(&start);
+    cudaError_t err = cudaEventCreate(&start);
     if (err != cudaSuccess) {
         throw std::runtime_error("Failed to create start event");
     }

@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.23.5)
 
+########### GLOBAL VARIABLES - CAN BE CHANGED
+set(OpenCV_SUBDIR "/x64/vc16")
 
 ########### ACCELERATOR SECTION
 set(FRUGALLY_DEEP "1")
@@ -57,9 +59,12 @@ endfunction()
 message("Searching for OpenCV.")
 find_package(OpenCV REQUIRED)
 message("OpenCV successfully found.")
+
+copy_dlls(${PROJECT_NAME} "${OpenCV_DIR}${OpenCV_SUBDIR}/bin")
 include_directories(${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
 message("OpenCV successfully linked.")
+
 
 
 ########### HANDLE ACCELERATORS
@@ -69,9 +74,9 @@ IF (${ACCELERATE_TENSOR_RT})
     find_package(CUDAToolkit REQUIRED)
     message("CUDAToolkit successfully found.")
 
-    list(APPEND PLUGINS "nvinfer")
-    list(APPEND PLUGINS "nvinfer_plugin")
-    list(APPEND PLUGINS "nvonnxparser")
+    list(APPEND PLUGINS "nvinfer_10")
+    list(APPEND PLUGINS "nvinfer_plugin_10")
+    list(APPEND PLUGINS "nvonnxparser_10")
 
     if (NOT DEFINED TENSOR_RT_ROOT)
         message(SEND_ERROR "\"TENSOR_RT_ROOT\" is required")
@@ -90,16 +95,16 @@ IF (${ACCELERATE_TENSOR_RT})
     message("TensorRT libraries successfully found.")
 
     target_link_libraries(${PROJECT_NAME} CUDA::cudart ${PLUGIN_LIBS})
-    target_include_directories(${PROJECT_NAME} PRIVATE src/include)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${TENSOR_RT_ROOT}/include src/include)
     target_compile_definitions(${PROJECT_NAME} PRIVATE ACCELERATE_TENSOR_RT=${ACCELERATE_TENSOR_RT})
 ELSEIF (${ACCELERATE_FRUGALLY_DEEP})
     ########### LINK FRUGALLY DEEP FOR INFERENCING
     target_include_directories(${PROJECT_NAME}
             PRIVATE
-            ${PROJECT_SOURCE_DIR}/libs/FunctionalPlus/include
-            ${PROJECT_SOURCE_DIR}/libs/json/single_include
-            ${PROJECT_SOURCE_DIR}/libs/eigen
-            ${PROJECT_SOURCE_DIR}/libs/frugally-deep/include
+            libs/FunctionalPlus/include
+            libs/json/single_include
+            libs/eigen
+            libs/frugally-deep/include
             src/include
     )
     target_compile_definitions(${PROJECT_NAME} PRIVATE ACCELERATE_FRUGALLY_DEEP=${ACCELERATE_FRUGALLY_DEEP})
