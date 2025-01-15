@@ -9,7 +9,7 @@ FrugallyDeepInference::FrugallyDeepInference(const std::string& model_path): mod
 
 FrugallyDeepInference::~FrugallyDeepInference() = default;
 
-OutTensor FrugallyDeepInference::predict(const cv::Mat& image, std::size_t out_class) const
+OutTensor FrugallyDeepInference::predict(const cv::Mat& image) const
 {
     OutTensor out_tensor;
     const std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::high_resolution_clock::now();
@@ -22,7 +22,7 @@ OutTensor FrugallyDeepInference::predict(const cv::Mat& image, std::size_t out_c
     return out_tensor;
 }
 
-OutParTensors FrugallyDeepInference::predict_all(const std::vector<cv::Mat>& images, std::size_t out_class) const
+OutParTensors FrugallyDeepInference::predict_all(const std::vector<cv::Mat>& images) const
 {
     OutParTensors out_mul_tensors;
     std::vector<OutParTensor> out_mul_tensor_vector;
@@ -31,15 +31,15 @@ OutParTensors FrugallyDeepInference::predict_all(const std::vector<cv::Mat>& ima
     const auto start = std::chrono::high_resolution_clock::now();
     for (const auto& image : images)
     {
-        auto future = std::async(std::launch::async, [&]()
+        auto future = std::async(std::launch::async, [&]
         {
             OutParTensor out_mul_tensor;
             const auto current_start = std::chrono::high_resolution_clock::now();
             auto vector = to_tensor(image);
             const auto out_tensor = this->model_.predict({vector});
             const auto current_end = std::chrono::high_resolution_clock::now();
-            out_mul_tensor.offset_milliseconds = static_cast<float>((current_start - start).count()) / 1000000.0;
-            out_mul_tensor.milliseconds = static_cast<float>((current_end - current_start).count()) / 1000000.0;
+            out_mul_tensor.offset_milliseconds = static_cast<float>((current_start - start).count()) / 1000000.0f;
+            out_mul_tensor.milliseconds = static_cast<float>((current_end - current_start).count()) / 1000000.0f;
             out_mul_tensor.predictions = out_tensor[0].to_vector();
             return out_mul_tensor;
         });
@@ -50,16 +50,22 @@ OutParTensors FrugallyDeepInference::predict_all(const std::vector<cv::Mat>& ima
         out_mul_tensor_vector.push_back(future.get());
     }
     const auto end = std::chrono::high_resolution_clock::now();
-    out_mul_tensors.milliseconds = static_cast<float>((end - start).count()) / 1000000.0;
+    out_mul_tensors.milliseconds = static_cast<float>((end - start).count()) / 1000000.0f;
     out_mul_tensors.out_tensors = out_mul_tensor_vector;
     return out_mul_tensors;
 }
 
-fdeep::tensor FrugallyDeepInference::to_tensor(const cv::Mat& image)
+fdeep::tensor FrugallyDeepInference::to_tensor(const cv::Mat& image) const
 {
-    const auto converted_image = modify_image(image);
-    const auto float_array = to_vector_input(converted_image);
-    auto tensor = fdeep::tensor(fdeep::tensor_shape{28, 28, 1}, float_array);
+    const auto input_shapes = this->model_.get_input_shapes();
+    const auto& input_shape = input_shapes.at(0);
+    const auto height = input_shape.height_.get_with_default(0);
+    const auto width = input_shape.width_.get_with_default(0);
+    const auto depth = input_shape.depth_.get_with_default(0);
+
+    const auto converted_image = modify_image(image, static_cast<int>(width), static_cast<int>(height));
+    const auto image_data = to_vector_input(converted_image, static_cast<int>(width), static_cast<int>(height));
+    auto tensor = fdeep::tensor(fdeep::tensor_shape{height, width, depth}, image_data);
     return tensor;
 }
 

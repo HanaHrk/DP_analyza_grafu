@@ -5,188 +5,191 @@
 #include "Logger.h"
 #include <Windows.h>
 
-TensorRTInference::TensorRTInference(const std::string &model_path,
-                           const nvinfer1::ILogger::Severity &severity = nvinfer1::ILogger::Severity::kINFO) {
-    this->program_logger_ = new ProgramLogger(severity);
-    this->engine_ = build_engine(model_path, *this->program_logger_);
+constexpr void HANDLE_ERROR(const cudaError_t& e)
+{
+    if (e != cudaSuccess)
+    {
+        std::cerr << "Cuda error: " << cudaGetErrorString(e) << std::endl;
+        throw std::runtime_error("Cuda error:" + std::string(cudaGetErrorString(e)));
+    }
 }
 
-TensorRTInference::~TensorRTInference() {
+TensorRTInference::TensorRTInference(const std::string& model_path,
+                                     const nvinfer1::ILogger::Severity& severity = nvinfer1::ILogger::Severity::kINFO)
+{
+    this->program_logger_ = new ProgramLogger(severity);
+    this->engine_ = build_engine(model_path, *this->program_logger_);
+    this->context_ = engine_->createExecutionContext();
+    this->init_tensor_buffers();
+}
+
+void TensorRTInference::init_tensor_buffers()
+{
+    const auto input_tensor_name = get_input_tensor_name();
+    const auto output_tensor_name = get_output_tensor_name();
+    const auto input_size = get_tensor_size(input_tensor_name);
+    const auto output_size = get_tensor_size(output_tensor_name);
+
+    HANDLE_ERROR(cudaMalloc(&this->tensor_buffers_[input_index], input_size));
+    HANDLE_ERROR(cudaMalloc(&this->tensor_buffers_[output_index], output_size));
+    if (!this->context_->setInputTensorAddress(input_tensor_name.c_str(), this->tensor_buffers_[input_index]))
+    {
+        throw std::runtime_error("Failed to set input tensor address.");
+    }
+    if (!this->context_->setOutputTensorAddress(output_tensor_name.c_str(), this->tensor_buffers_[output_index]))
+    {
+        throw std::runtime_error("Failed to set output tensor address.");
+    }
+}
+
+TensorRTInference::~TensorRTInference()
+{
+    HANDLE_ERROR(cudaFree(this->tensor_buffers_[input_index]));
+    HANDLE_ERROR(cudaFree(this->tensor_buffers_[output_index]));
+    delete this->context_;
     delete this->engine_;
     delete this->program_logger_;
 }
 
-OutTensor TensorRTInference::predict(const cv::Mat &image, const std::size_t out_class) const {
+OutTensor TensorRTInference::predict(const cv::Mat& image) const
+{
     OutTensor out_tensor;
-    const auto context = this->engine_->createExecutionContext();
     cudaEvent_t end, start;
-    std::array<void *, 2> buffers{};
 
-    cudaEventCreate(&end);
-    cudaEventCreate(&start);
-    cudaEventRecord(start, nullptr);
+    // Create and record start event
+    create_and_record_event(start, nullptr);
 
-    const auto image_data = process_image(image);
-    init_cuda_buffers(buffers, image_data, out_class);
-    if (!context->executeV2(buffers.data())) {
-        throw std::runtime_error("Failed to enqueue context");
+    // Access Tensors props
+    const auto input_tensor_name = get_input_tensor_name();
+    const auto output_tensor_name = get_output_tensor_name();
+    const auto input_shape = this->context_->getEngine().getTensorShape(input_tensor_name.c_str());
+    const auto input_size = get_tensor_size(input_tensor_name);
+    const auto output_size = get_tensor_size(output_tensor_name);
+    const auto input_width = static_cast<int>(input_shape.d[1]);
+    const auto input_height = static_cast<int>(input_shape.d[2]);
+
+    // Resize prediction to output size
+    out_tensor.predictions.resize(output_size / sizeof(float));
+
+    const auto image_data = process_image(image, input_width, input_height);
+    HANDLE_ERROR(cudaMemcpy(this->tensor_buffers_[input_index], image_data.data(), input_size,
+                            cudaMemcpyHostToDevice));
+    if (!this->context_->executeV2(this->tensor_buffers_.data()))
+    {
+        throw std::exception("Failed to execute context");
     }
 
-    std::vector<float> predictions(out_class);
-    copy_to_host(predictions, buffers, out_class);
-    destroy_cuda_buffers(buffers);
-    delete context;
+    HANDLE_ERROR(cudaMemcpy(out_tensor.predictions.data(), this->tensor_buffers_[output_index], output_size,
+                            cudaMemcpyDeviceToHost));
 
-    cudaEventRecord(end, nullptr);
+    create_and_record_event(end, nullptr);
     out_tensor.milliseconds = compute_milliseconds(start, end);
 
-    cudaEventDestroy(end);
-    cudaEventDestroy(start);
+    HANDLE_ERROR(cudaEventDestroy(end));
+    HANDLE_ERROR(cudaEventDestroy(start));
     return out_tensor;
 }
 
-OutParTensors TensorRTInference::predict_all(const std::vector<cv::Mat> &images, const std::size_t out_class) const {
+OutParTensors TensorRTInference::predict_all(const std::vector<cv::Mat>& images) const
+{
     OutParTensors out_par_tensors;
-    cudaEvent_t start, end;
+    cudaEvent_t start_event, end_event;
+    cudaStream_t stream;
 
-    typedef struct TmpDataHolder {
-        cudaEvent_t current_start{}, current_end{};
-        cudaStream_t stream{};
-        std::array<void *, 2> buffers{};
-        OutParTensor tensor{};
-        nvinfer1::IExecutionContext *context;
+    // Access Tensors props
+    const auto input_tensor_name = get_input_tensor_name();
+    const auto output_tensor_name = get_output_tensor_name();
+    const auto [nbDims, d] = this->context_->getEngine().getTensorShape(input_tensor_name.c_str());
+    const auto input_size = get_tensor_size(input_tensor_name);
+    const auto output_size = get_tensor_size(output_tensor_name);
+    const auto input_width = static_cast<int>(d[1]);
+    const auto input_height = static_cast<int>(d[2]);
 
-        explicit TmpDataHolder(nvinfer1::IExecutionContext *context) {
-            this->context = context;
-        }
-    } TmpDataHolder;
-    std::vector<TmpDataHolder> tmp_data;
+    // Initialize CUDA resources
+    HANDLE_ERROR(cudaEventCreate(&start_event));
+    HANDLE_ERROR(cudaEventCreate(&end_event));
+    HANDLE_ERROR(cudaStreamCreate(&stream));
+    HANDLE_ERROR(cudaEventRecord(start_event, stream));
 
-    cudaError_t err = cudaEventCreate(&start);
-    if (err != cudaSuccess) {
-        throw std::runtime_error("Failed to create start event");
-    }
-    err = cudaEventCreate(&end);
-    if (err != cudaSuccess) {
-        throw std::runtime_error("Failed to create end event");
-    }
-    err = cudaEventRecord(start, nullptr);
-    if (err != cudaSuccess) {
-        throw std::runtime_error("Failed to record start event");
+    // Process each image
+    for (const auto& image : images)
+    {
+        const auto image_data = process_image(image, input_width, input_height);
+        const auto inference = process_image_inference(stream, start_event, image_data, input_size, output_size);
+        out_par_tensors.out_tensors.push_back(inference);
     }
 
-    const auto complete_threads = [start](std::vector<TmpDataHolder> &completables,
-                                          std::vector<OutParTensor> &tensors) {
-        cudaError_t err;
-        for (auto &completable: completables) {
-            err = cudaStreamSynchronize(completable.stream);
-            if (err != cudaSuccess) {
-                throw std::runtime_error("Failed to synchronize stream.");
-            }
+    // Final synchronization and cleanup
+    HANDLE_ERROR(cudaEventRecord(end_event, stream));
+    HANDLE_ERROR(cudaStreamSynchronize(stream));
+    out_par_tensors.milliseconds = compute_milliseconds(start_event, end_event);
 
-            err = cudaEventRecord(completable.current_end, completable.stream);
-            if (err != cudaSuccess) {
-                throw std::runtime_error("Failed to record end event");
-            }
-            completable.tensor.milliseconds = compute_milliseconds(completable.current_start, completable.current_end);
-            completable.tensor.offset_milliseconds = compute_milliseconds(start, completable.current_start);
-            err = cudaEventDestroy(completable.current_start);
-            if (err != cudaSuccess) {
-                throw std::runtime_error("Failed to destroy start event");
-            }
-            err = cudaEventDestroy(completable.current_end);
-            if (err != cudaSuccess) {
-                throw std::runtime_error("Failed to destroy end event");
-            }
-            err = cudaStreamDestroy(completable.stream);
-            if (err != cudaSuccess) {
-                throw std::runtime_error("Failed to destroy stream");
-            }
-            delete completable.context;
-            tensors.push_back(completable.tensor);
-        }
-    };
-
-    for (const auto &image: images) {
-        if (tmp_data.size() >= get_SmCores()) {
-            complete_threads(tmp_data, out_par_tensors.out_tensors);
-            tmp_data.clear();
-        }
-        const auto context = this->engine_->createExecutionContext();
-        TmpDataHolder tmp(context);
-
-        err = cudaStreamCreate(&tmp.stream);
-        if (err != cudaSuccess) {
-            throw std::runtime_error("Failed to create stream");
-        }
-        err = cudaEventCreate(&tmp.current_start);
-        if (err != cudaSuccess) {
-            throw std::runtime_error("Failed to create item start event");
-        }
-        err = cudaEventCreate(&tmp.current_end);
-        if (err != cudaSuccess) {
-            throw std::runtime_error("Failed to create item end event");
-        }
-        err = cudaEventRecord(tmp.current_start, tmp.stream);
-        if (err != cudaSuccess) {
-            throw std::runtime_error("Failed to record start event");
-        }
-        const auto image_data = process_image(image);
-        err = cudaMallocAsync(&tmp.buffers[input_index], image_data.size() * sizeof(float),
-                              tmp.stream);
-        if (err != cudaSuccess) {
-            throw std::runtime_error("Failed to allocate input buffer");
-        }
-        err = cudaMallocAsync(&tmp.buffers[output_index], out_class * sizeof(float), tmp.stream);
-        if (err != cudaSuccess) {
-            throw std::runtime_error("Failed to allocate output buffer");
-        }
-        err = cudaMemcpyAsync(tmp.buffers[input_index], image_data.data(),
-                              image_data.size() * sizeof(float),
-                              cudaMemcpyHostToDevice, tmp.stream);
-        if (err != cudaSuccess) {
-            throw std::runtime_error("Failed to copy input buffer");
-        }
-
-        if (!context->setInputTensorAddress("args_0", tmp.buffers[input_index])) {
-            throw std::runtime_error("Failed to set input tensor address.");
-        }
-        if (!context->
-            setOutputTensorAddress("dense_1", tmp.buffers[output_index])) {
-            throw std::runtime_error("Failed to set output tensor address.");
-        }
-        if (!context->enqueueV3(tmp.stream)) {
-            throw std::runtime_error("Failed to enqueue upon stream on context.");
-        }
-        tmp.tensor.predictions.resize(out_class);
-        err = cudaMemcpyAsync(tmp.tensor.predictions.data(), tmp.buffers[output_index], out_class * sizeof(float),
-                              cudaMemcpyDeviceToHost, tmp.stream);
-        if (err != cudaSuccess) {
-            throw std::runtime_error("Failed to copy back to output buffer");
-        }
-        tmp_data.push_back(tmp);
-    }
-    complete_threads(tmp_data, out_par_tensors.out_tensors);
-    cudaEventRecord(end, nullptr);
-    out_par_tensors.milliseconds = compute_milliseconds(start, end);
-    cudaEventDestroy(start);
-    cudaEventDestroy(end);
+    HANDLE_ERROR(cudaStreamDestroy(stream));
+    HANDLE_ERROR(cudaEventDestroy(start_event));
+    HANDLE_ERROR(cudaEventDestroy(end_event));
     return out_par_tensors;
 }
 
-nvinfer1::ICudaEngine *TensorRTInference::build_engine(const std::string &onnx_model_path, ProgramLogger &logger) {
-    nvinfer1::IBuilder *builder = nvinfer1::createInferBuilder(logger);
+OutParTensor TensorRTInference::process_image_inference(const cudaStream_t& stream,
+                                                        const cudaEvent_t& start_event,
+                                                        const std::vector<float>& input_data,
+                                                        const std::size_t input_size,
+                                                        const std::size_t output_size) const
+{
+    cudaEvent_t image_start_event, image_end_event;
+    OutParTensor tensor_result;
+
+    // Create and record events for the image
+    create_and_record_event(image_start_event, stream);
+
+    // Copy input data and perform inference
+    HANDLE_ERROR(cudaMemcpyAsync(this->tensor_buffers_[input_index], input_data.data(), input_size,
+                                 cudaMemcpyHostToDevice, stream));
+    if (!this->context_->enqueueV3(stream))
+    {
+        throw std::runtime_error("Failed to enqueue upon stream on context.");
+    }
+
+    // Retrieve output data
+    tensor_result.predictions.resize(output_size / sizeof(float));
+    HANDLE_ERROR(cudaMemcpyAsync(tensor_result.predictions.data(), this->tensor_buffers_[output_index], output_size,
+                                 cudaMemcpyDeviceToHost, stream));
+
+    // Synchronize and measure time
+    create_and_record_event(image_end_event, stream);
+    HANDLE_ERROR(cudaStreamSynchronize(stream));
+    tensor_result.milliseconds = compute_milliseconds(image_start_event, image_end_event);
+    tensor_result.offset_milliseconds = compute_milliseconds(start_event, image_start_event);
+
+    // Cleanup
+    HANDLE_ERROR(cudaEventDestroy(image_start_event));
+    HANDLE_ERROR(cudaEventDestroy(image_end_event));
+
+    return tensor_result;
+}
+
+void TensorRTInference::create_and_record_event(cudaEvent_t& event, cudaStream_t stream)
+{
+    HANDLE_ERROR(cudaEventCreate(&event));
+    HANDLE_ERROR(cudaEventRecord(event, stream));
+}
+
+nvinfer1::ICudaEngine* TensorRTInference::build_engine(const std::string& onnx_model_path, ProgramLogger& logger)
+{
+    nvinfer1::IBuilder* builder = nvinfer1::createInferBuilder(logger);
     constexpr auto explicitBatch = 1U << 0;
-    nvinfer1::INetworkDefinition *network = builder->createNetworkV2(explicitBatch);
+    nvinfer1::INetworkDefinition* network = builder->createNetworkV2(explicitBatch);
 
     const auto parser = nvonnxparser::createParser(*network, logger);
-    if (!parser->parseFromFile(onnx_model_path.c_str(), static_cast<int>(nvinfer1::ILogger::Severity::kWARNING))) {
+    if (!parser->parseFromFile(onnx_model_path.c_str(), static_cast<int>(nvinfer1::ILogger::Severity::kWARNING)))
+    {
         throw std::runtime_error("Failed to parse ONNX model.");
     }
-    nvinfer1::IBuilderConfig *config = builder->createBuilderConfig();
+    nvinfer1::IBuilderConfig* config = builder->createBuilderConfig();
     config->setMemoryPoolLimit(nvinfer1::MemoryPoolType::kWORKSPACE, 1 << 30); // 1GB WORKSPACE
-    nvinfer1::ICudaEngine *engine = builder->buildEngineWithConfig(*network, *config);
-    if (engine == nullptr) {
+    nvinfer1::ICudaEngine* engine = builder->buildEngineWithConfig(*network, *config);
+    if (engine == nullptr)
+    {
         throw std::runtime_error("Failed to build engine.");
     }
     delete config;
@@ -195,75 +198,39 @@ nvinfer1::ICudaEngine *TensorRTInference::build_engine(const std::string &onnx_m
     return engine;
 }
 
-
-void TensorRTInference::init_cuda_buffers(std::array<void *, 2> &buffers, const std::vector<float> &image_data,
-                                     const std::size_t out_class) {
-    cudaMalloc(&buffers[input_index], image_data.size() * sizeof(float));
-    cudaMemcpy(buffers[input_index], image_data.data(), image_data.size() * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMalloc(&buffers[output_index], out_class * sizeof(float));
+std::vector<float> TensorRTInference::process_image(const cv::Mat& image, const int width, const int height)
+{
+    return to_vector_input(modify_image(image, width, height), width, height);
 }
 
-void TensorRTInference::destroy_cuda_buffers(const std::array<void *, 2> &buffers) {
-    cudaFree(buffers[input_index]);
-    cudaFree(buffers[output_index]);
-}
-
-void TensorRTInference::copy_to_host(std::vector<float> &predictions, const std::array<void *, 2> &buffers,
-                                const std::size_t out_class) {
-    cudaMemcpy(predictions.data(), buffers[output_index], out_class * sizeof(float), cudaMemcpyDeviceToHost);
-}
-
-std::vector<float> TensorRTInference::process_image(const cv::Mat &image) {
-    return to_vector_input(modify_image(image));
-}
-
-float TensorRTInference::compute_milliseconds(const cudaEvent_t &start, const cudaEvent_t &end) {
+float TensorRTInference::compute_milliseconds(const cudaEvent_t& start, const cudaEvent_t& end)
+{
     float milliseconds = -1;
-    cudaEventSynchronize(end);
-    cudaEventElapsedTime(&milliseconds, start, end);
+    HANDLE_ERROR(cudaEventSynchronize(end));
+    HANDLE_ERROR(cudaEventElapsedTime(&milliseconds, start, end));
     return milliseconds;
 }
 
-long TensorRTInference::get_SmCores() {
-    int deviceId;
-    cudaDeviceProp deviceProps{};
-    cudaGetDevice(&deviceId);
-    cudaGetDeviceProperties(&deviceProps, deviceId);
-    return ConvertSMVer2Cores(deviceProps.major, deviceProps.minor) * deviceProps.multiProcessorCount;
+std::string TensorRTInference::get_input_tensor_name() const
+{
+    return this->context_->getEngine().getIOTensorName(0);
 }
 
-int TensorRTInference::ConvertSMVer2Cores(const int major, const int minor) {
-    typedef struct {
-        int SM; // SM Major version
-        int Cores; // Number of operational cores
-    } s_mto_cores;
+std::string TensorRTInference::get_output_tensor_name() const
+{
+    const auto tensors = this->context_->getEngine().getNbIOTensors();
+    return this->context_->getEngine().getIOTensorName(tensors - 1);
+}
 
-    const s_mto_cores n_gpu_arch_cores_per_sm[] = {
-        {0x30, 192},
-        {0x32, 192},
-        {0x35, 192},
-        {0x37, 192},
-        {0x50, 128},
-        {0x52, 128},
-        {0x53, 128},
-        {0x60, 64},
-        {0x61, 128},
-        {0x62, 128},
-        {0x70, 64},
-        {0x72, 64},
-        {0x75, 64},
-        {-1, -1}
-    };
-
-    int index = 0;
-    while (n_gpu_arch_cores_per_sm[index].SM != -1) {
-        if (n_gpu_arch_cores_per_sm[index].SM == ((major << 4) + minor)) {
-            return n_gpu_arch_cores_per_sm[index].Cores;
-        }
-
-        index++;
+size_t TensorRTInference::get_tensor_size(const std::string& tensor_name) const
+{
+    const auto dims = this->context_->getEngine().getTensorShape(tensor_name.c_str());
+    size_t size = 1;
+    for (int i = 0; i < dims.nbDims; i++)
+    {
+        size *= dims.d[i];
     }
-    return n_gpu_arch_cores_per_sm[index - 1].Cores;
+    return size * sizeof(float);
 }
 
 #endif

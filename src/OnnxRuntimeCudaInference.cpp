@@ -4,8 +4,10 @@
 #include "StringUtils.h"
 #include "ImageUtils.h"
 #include <cuda_runtime.h>
+#include <numeric>
 
-OnnxRuntimeCudaInference::OnnxRuntimeCudaInference(const std::string &model_path) {
+OnnxRuntimeCudaInference::OnnxRuntimeCudaInference(const std::string& model_path)
+{
     Ort::ThreadingOptions thread_options;
     thread_options.SetGlobalIntraOpNumThreads(1);
 
@@ -16,7 +18,8 @@ OnnxRuntimeCudaInference::OnnxRuntimeCudaInference(const std::string &model_path
     this->cuda_allocator_ = new Ort::Allocator(*this->session_, *this->memory_info_);
 }
 
-Ort::SessionOptions OnnxRuntimeCudaInference::build_session_options() {
+Ort::SessionOptions OnnxRuntimeCudaInference::build_session_options()
+{
     Ort::SessionOptions session_options;
     OrtCUDAProviderOptions cuda_options;
     cuda_options.device_id = 0;
@@ -32,92 +35,128 @@ Ort::SessionOptions OnnxRuntimeCudaInference::build_session_options() {
     return session_options;
 }
 
-OnnxRuntimeCudaInference::~OnnxRuntimeCudaInference() {
+OnnxRuntimeCudaInference::~OnnxRuntimeCudaInference()
+{
     delete this->cuda_allocator_;
     delete this->memory_info_;
     delete this->session_;
     delete this->env_;
 };
 
-OutTensor OnnxRuntimeCudaInference::predict(const cv::Mat &image, const std::size_t out_class) const {
+constexpr char kGpuGraphConfigKey[] = "gpu_graph_id";
+
+OutTensor OnnxRuntimeCudaInference::predict(const cv::Mat& image) const
+{
     OutTensor out_tensor;
-    out_tensor.predictions.resize(out_class);
-    cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-    cudaEventRecord(start, nullptr);
-    const auto converted_image = modify_image(image);
-    const auto image_data = to_vector_input(converted_image);
+    auto [start, stop] = initializeCudaEvents();
 
-    const auto input_data_size = image_data.size() * sizeof(float);
-    const auto output_data_size = out_class * sizeof(float);
+    // Get input/output tensor shapes
+    auto [input_shape, output_shape] = get_input_output_shapes();
+    const int input_width = static_cast<int>(input_shape[1]);
+    const int input_height = static_cast<int>(input_shape[2]);
 
-    const char *input_names[] = {"args_0"};
-    const char *output_names[] = {"dense_1"};
+    // Calculate input/output sizes
+    const auto input_size = calculate_size_from_shape(input_shape);
+    const auto output_size = calculate_size_from_shape(output_shape);
+    const auto input_elements = input_size / sizeof(float);
+    const auto output_elements = output_size / sizeof(float);
+    out_tensor.predictions.resize(output_elements);
 
-    const auto input_data = std::unique_ptr<void, CudaMemoryDeleter>(this->cuda_allocator_->Alloc(input_data_size),
-                                                                     CudaMemoryDeleter(this->cuda_allocator_));
-    const auto output_data = std::unique_ptr<void, CudaMemoryDeleter>(this->cuda_allocator_->Alloc(output_data_size),
-                                                                      CudaMemoryDeleter(this->cuda_allocator_));
-    cudaMemcpy(input_data.get(), image_data.data(), input_data_size, cudaMemcpyHostToDevice);
+    // Image preprocessing
+    const auto image_data = process_image(image, input_width, input_height);
 
-    const auto input_shape = this->session_->GetInputTypeInfo(0).GetTensorTypeAndShapeInfo().GetShape();
-    const auto output_shape = this->session_->GetOutputTypeInfo(0).GetTensorTypeAndShapeInfo().GetShape();
+    // Input/output tensor names
+    const auto input_tensor_name = get_input_tensor_name();
+    const auto output_tensor_name = get_output_tensor_name();
+    const auto input_tensor_name_prt = input_tensor_name.c_str();
+    const auto output_tensor_name_prt = output_tensor_name.c_str();
+
+    // Allocate GPU memory
+    const auto input_data = std::unique_ptr<void, CudaMemoryDeleter>(
+        this->cuda_allocator_->Alloc(input_size), CudaMemoryDeleter(this->cuda_allocator_));
+    const auto output_data = std::unique_ptr<void, CudaMemoryDeleter>(
+        this->cuda_allocator_->Alloc(output_size), CudaMemoryDeleter(this->cuda_allocator_));
+
+    cudaMemcpy(input_data.get(), image_data.data(), input_size, cudaMemcpyHostToDevice);
+
+    // Create input/output tensors
     const auto input_tensor = Ort::Value::CreateTensor<float>(*this->memory_info_,
-                                                              static_cast<float *>(input_data.get()),
-                                                              image_data.size(), input_shape.data(),
-                                                              input_shape.size());;
-    auto output_tensor = Ort::Value::CreateTensor<float>(*this->memory_info_,
-                                                         static_cast<float *>(output_data.get()),
-                                                         out_tensor.predictions.size(), output_shape.data(),
-                                                         output_shape.size());
+                                                              static_cast<float*>(input_data.get()), input_elements,
+                                                              input_shape.data(), input_shape.size());
+    auto output_tensor = Ort::Value::CreateTensor<float>(*this->memory_info_, static_cast<float*>(output_data.get()),
+                                                         output_elements, output_shape.data(), output_shape.size());
 
+    // Run inference
     Ort::RunOptions run_options;
-    run_options.AddConfigEntry("gpu_graph_id", "1");
-    session_->Run(run_options, input_names, &input_tensor, 1, output_names, &output_tensor, 1);
-    cudaMemcpy(out_tensor.predictions.data(), output_data.get(), output_data_size, cudaMemcpyDeviceToHost);
+    run_options.AddConfigEntry(kGpuGraphConfigKey, "1");
+    session_->Run(run_options, &input_tensor_name_prt, &input_tensor, 1, &output_tensor_name_prt, &output_tensor, 1);
+
+    cudaMemcpy(out_tensor.predictions.data(), output_data.get(), output_size, cudaMemcpyDeviceToHost);
     cudaEventRecord(stop, nullptr);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&out_tensor.milliseconds, start, stop);
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
+
     return out_tensor;
 }
 
-OutParTensors
-OnnxRuntimeCudaInference::predict_all(const std::vector<cv::Mat> &images, const std::size_t out_class) const {
-    OutParTensors out_par_tensors;
-    out_par_tensors.milliseconds = 0;
+std::vector<float> OnnxRuntimeCudaInference::process_image(const cv::Mat& image, const int width,
+                                                           const int height)
+{
+    return to_vector_input(modify_image(image, width, height), width, height);
+}
+
+std::pair<cudaEvent_t, cudaEvent_t> OnnxRuntimeCudaInference::initializeCudaEvents()
+{
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
     cudaEventRecord(start, nullptr);
-    std::recursive_mutex mutex;
-    std::vector<std::shared_future<std::vector<float> > > futures;
-    futures.reserve(images.size());
-    for (const auto &image: images) {
-        std::shared_future<std::vector<float> > future = std::async(std::launch::async, [&image] {
-            const auto converted_image = modify_image(image);
-            const auto image_data = to_vector_input(converted_image);
-            return image_data;
-        }).share();
-        futures.push_back(future);
-    }
-    for (const auto &shared_future: futures) {
-        this->session_->Run
-    }
-    cudaEventRecord(stop, nullptr);
-    cudaEventSynchronize(stop);
-    cudaEventElapsedTime(&out_par_tensors.milliseconds, start, stop);
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
+    return {start, stop};
+}
+
+std::pair<std::vector<int64_t>, std::vector<int64_t>> OnnxRuntimeCudaInference::get_input_output_shapes() const
+{
+    const auto input_shape = this->session_->GetInputTypeInfo(0)
+                                 .GetTensorTypeAndShapeInfo()
+                                 .GetShape();
+    const auto output_shape = this->session_->GetOutputTypeInfo(0)
+                                  .GetTensorTypeAndShapeInfo()
+                                  .GetShape();
+    return {input_shape, output_shape};
+}
+
+size_t OnnxRuntimeCudaInference::calculate_size_from_shape(const std::vector<int64_t>& shape)
+{
+    return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<>{}) * sizeof(float);
+}
+
+OutParTensors
+OnnxRuntimeCudaInference::predict_all(const std::vector<cv::Mat>& images) const
+{
+    OutParTensors out_par_tensors;
     return out_par_tensors;
 }
 
-void OnnxRuntimeCudaInference::async_callback(void *user_data, OrtValue **outputs, size_t num_outputs,
-                                              OrtStatusPtr status) {
-    std::cout << "Async callback" << std::endl;
-    int a = 0;
+void OnnxRuntimeCudaInference::async_callback(void* user_data, OrtValue** outputs, size_t num_outputs,
+                                              OrtStatusPtr status)
+{
 }
+
+std::string OnnxRuntimeCudaInference::get_input_tensor_name() const
+{
+    const Ort::AllocatorWithDefaultOptions allocator;
+    const auto input_name_prt = this->session_->GetInputNameAllocated(0, allocator);
+    return input_name_prt.get();
+}
+
+std::string OnnxRuntimeCudaInference::get_output_tensor_name() const
+{
+    const Ort::AllocatorWithDefaultOptions allocator;
+    const auto output_name_prt = this->session_->GetOutputNameAllocated(0, allocator);
+    return output_name_prt.get();
+}
+
 
 #endif

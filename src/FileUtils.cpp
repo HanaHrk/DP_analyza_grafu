@@ -15,7 +15,6 @@ const std::vector<std::string> extensions = {".png", ".jpg", ".jpeg", ".bmp"};
 std::vector<std::string> find_all_images(const std::string &root_path) {
     std::vector<std::string> image_files;
 #ifdef __unix__
-
     try {
         // Iterating the directories and files under root_path
         for (const auto &entry: std::filesystem::recursive_directory_iterator(root_path)) {

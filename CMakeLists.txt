@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.23.5)
+set (CMAKE_CXX_STANDARD 17)
 
 ########### GLOBAL VARIABLES - CAN BE CHANGED
 set(OpenCV_SUBDIR "/x64/vc16")
