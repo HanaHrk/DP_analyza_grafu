@@ -60,14 +60,14 @@ std::string to_out_string(const float f)
  */
 float test_parallel(const AbstractInference& inference, const std::vector<cv::Mat>& images)
 {
-    const auto parallel_tensors = inference.predict_all(images);
+    const auto [out_tensors, milliseconds] = inference.predict_all(images);
     ofstream << "Offset;Duration;Class;\n";
-    for (const auto& par_tensor : parallel_tensors.out_tensors)
+    for (const auto& [predictions, milliseconds, offset_milliseconds] : out_tensors)
     {
-        ofstream << par_tensor.offset_milliseconds << ";" << par_tensor.milliseconds << ";"
-            << argmax(par_tensor.predictions) << ";\n";
+        ofstream << offset_milliseconds << ";" << milliseconds << ";"
+            << argmax(predictions) << ";\n";
     }
-    return parallel_tensors.milliseconds;
+    return milliseconds;
 }
 
 /**
@@ -85,8 +85,8 @@ float test_sequential(const AbstractInference& inference, const std::vector<cv::
     float total_duration = 0;
     for (const auto& image : images)
     {
-        const auto tensor = inference.predict(image);
-        total_duration += tensor.milliseconds;
+        const auto [predictions, milliseconds] = inference.predict(image);
+        total_duration += milliseconds;
     }
     return total_duration;
 }
@@ -167,10 +167,20 @@ int evaluate_model_performance(const std::string& model_path, const std::string&
     constexpr int total_tests = 10;
     std::vector<float> parallel_run, sequential_run;
 
+#if ACCELERATE_FRUGALLY_DEEP
+    reinterpret_cast<FrugallyDeepInference*>(inference)->set_parallel_strategy(ParallelStrategy::STD_PARALLEL_FOREACH);
+#endif
     for (int i = 0; i < total_tests; i++)
     {
         evaluate_inference_performance(i, sequential_run, parallel_run, inference, images);
     }
+#if ACCELERATE_FRUGALLY_DEEP
+    reinterpret_cast<FrugallyDeepInference*>(inference)->set_parallel_strategy(ParallelStrategy::STD_THREADING);
+    for (int i = 0; i < total_tests; i++)
+    {
+        evaluate_inference_performance(i, sequential_run, parallel_run, inference, images);
+    }
+#endif
     delete inference;
     return 0;
 }

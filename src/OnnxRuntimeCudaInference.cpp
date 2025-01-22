@@ -4,6 +4,7 @@
 #include "StringUtils.h"
 #include "ImageUtils.h"
 #include <cuda_runtime.h>
+#include <memory>
 #include <numeric>
 
 OnnxRuntimeCudaInference::OnnxRuntimeCudaInference(const std::string& model_path)
@@ -11,11 +12,11 @@ OnnxRuntimeCudaInference::OnnxRuntimeCudaInference(const std::string& model_path
     Ort::ThreadingOptions thread_options;
     thread_options.SetGlobalIntraOpNumThreads(1);
 
-    this->env_ = new Ort::Env(thread_options, ORT_LOGGING_LEVEL_ERROR, "OnnxRuntimeCudaInference");
+    this->env_ = std::make_unique<Ort::Env>(thread_options, ORT_LOGGING_LEVEL_ERROR, "OnnxRuntimeCudaInference");
     const auto session_options = build_session_options();
-    this->session_ = new Ort::Session(*this->env_, to_wstring(model_path).c_str(), session_options);
-    this->memory_info_ = new Ort::MemoryInfo("Cuda", OrtArenaAllocator, 0, OrtMemTypeDefault);
-    this->cuda_allocator_ = new Ort::Allocator(*this->session_, *this->memory_info_);
+    this->session_ = std::make_unique<Ort::Session>(*this->env_, to_wstring(model_path).c_str(), session_options);
+    this->memory_info_ = std::make_unique<Ort::MemoryInfo>("Cuda", OrtArenaAllocator, 0, OrtMemTypeDefault);
+    this->cuda_allocator_ = std::make_unique<Ort::Allocator>(*this->session_, *this->memory_info_);
 }
 
 Ort::SessionOptions OnnxRuntimeCudaInference::build_session_options()
@@ -35,13 +36,7 @@ Ort::SessionOptions OnnxRuntimeCudaInference::build_session_options()
     return session_options;
 }
 
-OnnxRuntimeCudaInference::~OnnxRuntimeCudaInference()
-{
-    delete this->cuda_allocator_;
-    delete this->memory_info_;
-    delete this->session_;
-    delete this->env_;
-};
+OnnxRuntimeCudaInference::~OnnxRuntimeCudaInference() = default;
 
 constexpr char kGpuGraphConfigKey[] = "gpu_graph_id";
 
@@ -73,9 +68,9 @@ OutTensor OnnxRuntimeCudaInference::predict(const cv::Mat& image) const
 
     // Allocate GPU memory
     const auto input_data = std::unique_ptr<void, CudaMemoryDeleter>(
-        this->cuda_allocator_->Alloc(input_size), CudaMemoryDeleter(this->cuda_allocator_));
+        this->cuda_allocator_->Alloc(input_size), CudaMemoryDeleter(this->cuda_allocator_.get()));
     const auto output_data = std::unique_ptr<void, CudaMemoryDeleter>(
-        this->cuda_allocator_->Alloc(output_size), CudaMemoryDeleter(this->cuda_allocator_));
+        this->cuda_allocator_->Alloc(output_size), CudaMemoryDeleter(this->cuda_allocator_.get()));
 
     cudaMemcpy(input_data.get(), image_data.data(), input_size, cudaMemcpyHostToDevice);
 

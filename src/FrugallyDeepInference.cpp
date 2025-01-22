@@ -2,10 +2,19 @@
 #include "ImageUtils.h"
 #include "include/inference/FrugallyDeepInference.h"
 
+constexpr int NS_TO_MS = 1000000.0f;
 
-FrugallyDeepInference::FrugallyDeepInference(const std::string& model_path): model_(fdeep::load_model(model_path))
+FrugallyDeepInference::FrugallyDeepInference(const std::string& model_path): model_(fdeep::load_model(model_path)),
+                                                                             parallel_strategy_(
+                                                                                 ParallelStrategy::STD_PARALLEL_FOREACH)
 {
 }
+
+void FrugallyDeepInference::set_parallel_strategy(const ParallelStrategy& parallel_strategy)
+{
+    this->parallel_strategy_ = parallel_strategy;
+}
+
 
 FrugallyDeepInference::~FrugallyDeepInference() = default;
 
@@ -22,37 +31,76 @@ OutTensor FrugallyDeepInference::predict(const cv::Mat& image) const
     return out_tensor;
 }
 
+void FrugallyDeepInference::run_parallel(const std::vector<cv::Mat>& images,
+                                         std::vector<OutParTensor>& out_parallel_tensors,
+                                         std::atomic<int>& index) const
+{
+    if (parallel_strategy_ == ParallelStrategy::STD_PARALLEL_FOREACH)
+    {
+        std::cout << "Parallel foreach" << std::endl;
+        std::for_each(std::execution::par, images.begin(), images.end(),
+                      [this, &out_parallel_tensors, &index](const auto& image)
+                      {
+                          this->inference_callback()(std::chrono::high_resolution_clock::now(), out_parallel_tensors, index,
+                                                     image);
+                      });
+    }
+    else if (parallel_strategy_ == ParallelStrategy::STD_THREADING)
+    {
+        std::cout << "Parallel threads" << std::endl;
+        std::vector<std::shared_future<void>> futures;
+        futures.reserve(images.size());
+        for (const auto& image : images)
+        {
+            auto future = std::async(std::launch::async, [this, &out_parallel_tensors, &index, &image]()
+            {
+                this->inference_callback()(std::chrono::high_resolution_clock::now(), out_parallel_tensors, index, image);
+            });
+            futures.push_back(future.share());
+        }
+        for (auto& future : futures)
+        {
+            future.wait();
+        }
+    }
+}
+
 OutParTensors FrugallyDeepInference::predict_all(const std::vector<cv::Mat>& images) const
 {
-    OutParTensors out_mul_tensors;
-    std::vector<OutParTensor> out_mul_tensor_vector;
-    out_mul_tensor_vector.reserve(images.size());
+    OutParTensors out_parallel_tensors;
+    std::vector<OutParTensor> out_parallel_tensor_vector;
+    out_parallel_tensor_vector.resize(images.size());
     std::vector<std::shared_future<OutParTensor>> futures;
     const auto start = std::chrono::high_resolution_clock::now();
-    for (const auto& image : images)
-    {
-        auto future = std::async(std::launch::async, [&]
-        {
-            OutParTensor out_mul_tensor;
-            const auto current_start = std::chrono::high_resolution_clock::now();
-            auto vector = to_tensor(image);
-            const auto out_tensor = this->model_.predict({vector});
-            const auto current_end = std::chrono::high_resolution_clock::now();
-            out_mul_tensor.offset_milliseconds = static_cast<float>((current_start - start).count()) / 1000000.0f;
-            out_mul_tensor.milliseconds = static_cast<float>((current_end - current_start).count()) / 1000000.0f;
-            out_mul_tensor.predictions = out_tensor[0].to_vector();
-            return out_mul_tensor;
-        });
-        futures.push_back(future.share());
-    }
-    for (const auto& future : futures)
-    {
-        out_mul_tensor_vector.push_back(future.get());
-    }
+    std::atomic<int> index(0);
+    this->run_parallel(images, out_parallel_tensor_vector, index);
     const auto end = std::chrono::high_resolution_clock::now();
-    out_mul_tensors.milliseconds = static_cast<float>((end - start).count()) / 1000000.0f;
-    out_mul_tensors.out_tensors = out_mul_tensor_vector;
-    return out_mul_tensors;
+    out_parallel_tensors.milliseconds = static_cast<float>((end - start).count()) / NS_TO_MS;
+    out_parallel_tensors.out_tensors = out_parallel_tensor_vector;
+    return out_parallel_tensors;
+}
+
+std::function<void(const std::chrono::time_point<std::chrono::steady_clock>,
+                   std::vector<OutParTensor>&, std::atomic<int>&,
+                   const cv::Mat&)> FrugallyDeepInference::inference_callback() const
+{
+    return [this](const std::chrono::time_point<std::chrono::steady_clock> start,
+                  std::vector<OutParTensor>& out_par_tensors, std::atomic<int>& index,
+                  const cv::Mat& image)
+    {
+        OutParTensor out_parallel_tensor;
+        const auto current_start = std::chrono::high_resolution_clock::now();
+        auto vector = to_tensor(image);
+        const auto out_tensor = this->model_.predict({vector});
+        const auto current_end = std::chrono::high_resolution_clock::now();
+        out_parallel_tensor.predictions = out_tensor[0].to_vector();
+        out_parallel_tensor.offset_milliseconds = static_cast<float>((current_start - start).count()) /
+            NS_TO_MS;
+        out_parallel_tensor.milliseconds = static_cast<float>((current_end - current_start).count()) /
+            NS_TO_MS;
+        const auto current_index = index.fetch_add(1);
+        out_par_tensors[current_index] = out_parallel_tensor;
+    };
 }
 
 fdeep::tensor FrugallyDeepInference::to_tensor(const cv::Mat& image) const

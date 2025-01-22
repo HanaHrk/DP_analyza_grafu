@@ -11,28 +11,28 @@ class TensorRTInference final : public AbstractInference
     static constexpr int input_index = 0;
     static constexpr int output_index = 1;
 
-    nvinfer1::ICudaEngine* engine_;
-    ProgramLogger* program_logger_;
-    nvinfer1::IExecutionContext* context_;
+    std::unique_ptr<nvinfer1::ICudaEngine> engine_;
+    std::unique_ptr<ProgramLogger> program_logger_;
+    std::unique_ptr<nvinfer1::IExecutionContext> context_;
     std::array<void*, 2> tensor_buffers_{};
 
     static std::vector<float> process_image(const cv::Mat& image, int width, int height);
 
     static float compute_milliseconds(const cudaEvent_t& start, const cudaEvent_t& end);
 
-    std::string get_input_tensor_name() const;
+    [[nodiscard]] std::string get_input_tensor_name() const;
 
-    std::string get_output_tensor_name() const;
+    [[nodiscard]] std::string get_output_tensor_name() const;
 
-    size_t get_tensor_size(const std::string& tensor_name) const;
+    [[nodiscard]] size_t get_tensor_size(const std::string& tensor_name) const;
 
-    static void create_and_record_event(cudaEvent_t& event, cudaStream_t stream);
+    static void create_and_record_event(cudaEvent_t& event, const cudaStream_t& stream);
 
-    OutParTensor process_image_inference(const cudaStream_t& stream,
-                                         const cudaEvent_t& start_event,
-                                         const std::vector<float>& input_data,
-                                         std::size_t input_size,
-                                         std::size_t output_size) const;
+    [[nodiscard]] OutParTensor process_image_inference(const cudaStream_t& stream,
+                                                       const cudaEvent_t& start_event,
+                                                       const std::vector<float>& input_data,
+                                                       std::size_t input_size,
+                                                       std::size_t output_size) const;
 
     void init_tensor_buffers();
 

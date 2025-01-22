@@ -17,9 +17,9 @@ constexpr void HANDLE_ERROR(const cudaError_t& e)
 TensorRTInference::TensorRTInference(const std::string& model_path,
                                      const nvinfer1::ILogger::Severity& severity = nvinfer1::ILogger::Severity::kINFO)
 {
-    this->program_logger_ = new ProgramLogger(severity);
-    this->engine_ = build_engine(model_path, *this->program_logger_);
-    this->context_ = engine_->createExecutionContext();
+    this->program_logger_ = std::make_unique<ProgramLogger>(severity);
+    this->engine_ = std::unique_ptr<nvinfer1::ICudaEngine>(build_engine(model_path, *this->program_logger_));
+    this->context_ = std::unique_ptr<nvinfer1::IExecutionContext>(this->engine_->createExecutionContext());
     this->init_tensor_buffers();
 }
 
@@ -46,9 +46,6 @@ TensorRTInference::~TensorRTInference()
 {
     HANDLE_ERROR(cudaFree(this->tensor_buffers_[input_index]));
     HANDLE_ERROR(cudaFree(this->tensor_buffers_[output_index]));
-    delete this->context_;
-    delete this->engine_;
-    delete this->program_logger_;
 }
 
 OutTensor TensorRTInference::predict(const cv::Mat& image) const
@@ -62,11 +59,11 @@ OutTensor TensorRTInference::predict(const cv::Mat& image) const
     // Access Tensors props
     const auto input_tensor_name = get_input_tensor_name();
     const auto output_tensor_name = get_output_tensor_name();
-    const auto input_shape = this->context_->getEngine().getTensorShape(input_tensor_name.c_str());
+    const auto [nbDims, d] = this->context_->getEngine().getTensorShape(input_tensor_name.c_str());
     const auto input_size = get_tensor_size(input_tensor_name);
     const auto output_size = get_tensor_size(output_tensor_name);
-    const auto input_width = static_cast<int>(input_shape.d[1]);
-    const auto input_height = static_cast<int>(input_shape.d[2]);
+    const auto input_width = static_cast<int>(d[1]);
+    const auto input_height = static_cast<int>(d[2]);
 
     // Resize prediction to output size
     out_tensor.predictions.resize(output_size / sizeof(float));
@@ -168,7 +165,7 @@ OutParTensor TensorRTInference::process_image_inference(const cudaStream_t& stre
     return tensor_result;
 }
 
-void TensorRTInference::create_and_record_event(cudaEvent_t& event, cudaStream_t stream)
+void TensorRTInference::create_and_record_event(cudaEvent_t& event, const cudaStream_t& stream)
 {
     HANDLE_ERROR(cudaEventCreate(&event));
     HANDLE_ERROR(cudaEventRecord(event, stream));
@@ -176,25 +173,22 @@ void TensorRTInference::create_and_record_event(cudaEvent_t& event, cudaStream_t
 
 nvinfer1::ICudaEngine* TensorRTInference::build_engine(const std::string& onnx_model_path, ProgramLogger& logger)
 {
-    nvinfer1::IBuilder* builder = nvinfer1::createInferBuilder(logger);
+    const auto builder = std::unique_ptr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(logger));
     constexpr auto explicitBatch = 1U << 0;
-    nvinfer1::INetworkDefinition* network = builder->createNetworkV2(explicitBatch);
+    const auto network = std::unique_ptr<nvinfer1::INetworkDefinition>(builder->createNetworkV2(explicitBatch));
 
-    const auto parser = nvonnxparser::createParser(*network, logger);
+    const auto parser = std::unique_ptr<nvonnxparser::IParser>(nvonnxparser::createParser(*network, logger));
     if (!parser->parseFromFile(onnx_model_path.c_str(), static_cast<int>(nvinfer1::ILogger::Severity::kWARNING)))
     {
         throw std::runtime_error("Failed to parse ONNX model.");
     }
-    nvinfer1::IBuilderConfig* config = builder->createBuilderConfig();
+    const auto config = std::unique_ptr<nvinfer1::IBuilderConfig>(builder->createBuilderConfig());
     config->setMemoryPoolLimit(nvinfer1::MemoryPoolType::kWORKSPACE, 1 << 30); // 1GB WORKSPACE
-    nvinfer1::ICudaEngine* engine = builder->buildEngineWithConfig(*network, *config);
+    const auto engine = builder->buildEngineWithConfig(*network, *config);
     if (engine == nullptr)
     {
         throw std::runtime_error("Failed to build engine.");
     }
-    delete config;
-    delete parser;
-    delete network;
     return engine;
 }
 
@@ -224,11 +218,11 @@ std::string TensorRTInference::get_output_tensor_name() const
 
 size_t TensorRTInference::get_tensor_size(const std::string& tensor_name) const
 {
-    const auto dims = this->context_->getEngine().getTensorShape(tensor_name.c_str());
+    const auto [nbDims, d] = this->context_->getEngine().getTensorShape(tensor_name.c_str());
     size_t size = 1;
-    for (int i = 0; i < dims.nbDims; i++)
+    for (int i = 0; i < nbDims; i++)
     {
-        size *= dims.d[i];
+        size *= d[i];
     }
     return size * sizeof(float);
 }

@@ -46,23 +46,22 @@ struct CudaMemoryDeleter
 
 class OnnxRuntimeCudaInference final : public AbstractInference
 {
-    Ort::Env* env_{};
-    Ort::Session* session_{};
-    Ort::MemoryInfo* memory_info_;
-    Ort::Allocator* cuda_allocator_;
+    std::unique_ptr<Ort::Env> env_{};
+    std::unique_ptr<Ort::Session> session_{};
+    std::unique_ptr<Ort::MemoryInfo> memory_info_;
+    std::unique_ptr<Ort::Allocator> cuda_allocator_;
 
     static Ort::SessionOptions build_session_options();
 
     static void async_callback(void* user_data, OrtValue** outputs, size_t num_outputs, OrtStatusPtr status);
 
+    [[nodiscard]] std::string get_input_tensor_name() const;
 
-    std::string get_input_tensor_name() const;
-
-    std::string get_output_tensor_name() const;
+    [[nodiscard]] std::string get_output_tensor_name() const;
 
     static size_t calculate_size_from_shape(const std::vector<int64_t>& shape);
 
-    std::pair<std::vector<int64_t>, std::vector<int64_t>> get_input_output_shapes() const;
+    [[nodiscard]] std::pair<std::vector<int64_t>, std::vector<int64_t>> get_input_output_shapes() const;
 
     static std::pair<cudaEvent_t, cudaEvent_t> OnnxRuntimeCudaInference::initializeCudaEvents();
 
