@@ -7,28 +7,43 @@
 #include <memory>
 #include <numeric>
 
-OnnxRuntimeCudaInference::OnnxRuntimeCudaInference(const std::string& model_path)
+OnnxRuntimeCudaInference::OnnxRuntimeCudaInference(const std::string& model_path, ExecutionProvider provider)
 {
     Ort::ThreadingOptions thread_options;
     thread_options.SetGlobalIntraOpNumThreads(1);
 
     this->env_ = std::make_unique<Ort::Env>(thread_options, ORT_LOGGING_LEVEL_ERROR, "OnnxRuntimeCudaInference");
-    const auto session_options = build_session_options();
+    Ort::SessionOptions session_options = build_session_options(provider);
     this->session_ = std::make_unique<Ort::Session>(*this->env_, to_wstring(model_path).c_str(), session_options);
     this->memory_info_ = std::make_unique<Ort::MemoryInfo>("Cuda", OrtArenaAllocator, 0, OrtMemTypeDefault);
     this->cuda_allocator_ = std::make_unique<Ort::Allocator>(*this->session_, *this->memory_info_);
 }
 
-Ort::SessionOptions OnnxRuntimeCudaInference::build_session_options()
+Ort::SessionOptions OnnxRuntimeCudaInference::build_session_options(ExecutionProvider execution_provider)
 {
     Ort::SessionOptions session_options;
-    OrtCUDAProviderOptions cuda_options;
-    cuda_options.device_id = 0;
-    cuda_options.arena_extend_strategy = 0;
-    cuda_options.gpu_mem_limit = 2 * 1024 * 1024 * 1024;
-    cuda_options.cudnn_conv_algo_search = OrtCudnnConvAlgoSearchExhaustive;
-    cuda_options.do_copy_in_default_stream = 1;
-    session_options.AppendExecutionProvider_CUDA(cuda_options);
+    if (execution_provider == ExecutionProvider::OPEN_VINO_CPU)
+    {
+        OrtOpenVINOProviderOptions open_vino_options;
+        open_vino_options.device_type = "CPU_FP32";
+        session_options.AppendExecutionProvider_OpenVINO(open_vino_options);
+    }
+    else if (execution_provider == ExecutionProvider::OPEN_VINO_GPU)
+    {
+        OrtOpenVINOProviderOptions open_vino_options;
+        open_vino_options.device_type = "GPU_FP32";
+        session_options.AppendExecutionProvider_OpenVINO(open_vino_options);
+    }
+    else if (execution_provider == ExecutionProvider::CUDA)
+    {
+        OrtCUDAProviderOptions cuda_options;
+        cuda_options.device_id = 0;
+        cuda_options.arena_extend_strategy = 0;
+        cuda_options.gpu_mem_limit = 2 * 1024 * 1024 * 1024;
+        cuda_options.cudnn_conv_algo_search = OrtCudnnConvAlgoSearchExhaustive;
+        cuda_options.do_copy_in_default_stream = 1;
+        session_options.AppendExecutionProvider_CUDA(cuda_options);
+    }
     session_options.SetIntraOpNumThreads(0);
     session_options.SetGraphOptimizationLevel(ORT_ENABLE_ALL);
     session_options.SetExecutionMode(ORT_PARALLEL);

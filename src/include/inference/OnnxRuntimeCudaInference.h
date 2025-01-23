@@ -6,6 +6,14 @@
 #include <semaphore>
 #include <cuda_runtime.h>
 
+enum class ExecutionProvider
+{
+    DEFAULT,
+    CUDA,
+    OPEN_VINO_GPU,
+    OPEN_VINO_CPU,
+};
+
 /**
  * @class CudaMemoryDeleter
  * @brief A custom deleter for CUDA-allocated device memory.
@@ -51,7 +59,7 @@ class OnnxRuntimeCudaInference final : public AbstractInference
     std::unique_ptr<Ort::MemoryInfo> memory_info_;
     std::unique_ptr<Ort::Allocator> cuda_allocator_;
 
-    static Ort::SessionOptions build_session_options();
+    static Ort::SessionOptions build_session_options(ExecutionProvider execution_provider);
 
     static void async_callback(void* user_data, OrtValue** outputs, size_t num_outputs, OrtStatusPtr status);
 
@@ -69,7 +77,8 @@ class OnnxRuntimeCudaInference final : public AbstractInference
     static std::vector<float> process_image(const cv::Mat& image, int width, int height);
 
 public:
-    explicit OnnxRuntimeCudaInference(const std::string& model_path);
+    explicit OnnxRuntimeCudaInference(const std::string& model_path,
+                                      ExecutionProvider provider = ExecutionProvider::CUDA);
 
 
     ~OnnxRuntimeCudaInference() override;
