@@ -7,7 +7,7 @@
 #include <memory>
 #include <numeric>
 
-OnnxRuntimeCudaInference::OnnxRuntimeCudaInference(const std::string& model_path, ExecutionProvider provider)
+OnnxRuntimeCudaInference::OnnxRuntimeCudaInference(const std::string& model_path, const ExecutionProvider provider)
 {
     Ort::ThreadingOptions thread_options;
     thread_options.SetGlobalIntraOpNumThreads(1);
