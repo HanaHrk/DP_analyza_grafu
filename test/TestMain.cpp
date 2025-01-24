@@ -1,11 +1,11 @@
-#include <ImageUtils.h>
 #include <fstream>
 #include "AbstractInference.h"
-#include "inference/FrugallyDeepInference.h"
-#include "inference/TensorRTInference.h"
+#include "FrugallyDeepInference.h"
+#include "TensorRTInference.h"
 #include "TestUtils.h"
 #include "MathUtils.h"
-#include "inference/OnnxRuntimeCudaInference.h"
+#include "OnnxCudaInference.h"
+#include "OnnxOpenVinoCpuInference.h"
 
 const std::string TENSORRT_OUTPUT_FILE = "tensorrt-output.csv";
 const std::string FRUGALLY_DEEP_OUTPUT_FILE = "frugallydeep-output.csv";
@@ -27,17 +27,7 @@ std::ofstream ofstream(ONNX_RUNTIME_CUDA_OUTPUT_FILE);
 std::ofstream ofstream(UNKNOWN_OUTPUT_FILE);
 #endif
 
-/**
- * @brief Converts a float value to a string representation for output purposes.
- *
- * This function transforms a given float value into a string format.
- * If the value is 0, it returns a placeholder string "-". For all other
- * cases, it converts the float to its string representation.
- *
- * @param f A float value to be converted into a string.
- *          If the value is 0, a specific placeholder is returned.
- * @return A string representing the given float value, or "-" if the input is 0.
- */
+
 std::string to_out_string(const float f)
 {
     if (f == 0)
@@ -47,17 +37,6 @@ std::string to_out_string(const float f)
     return std::to_string(f);
 }
 
-/**
- * @brief Executes parallel inference on a set of input images and records the results.
- *
- * This function processes a batch of images in parallel by invoking the inference model's `predict_all` method.
- * It writes the inference results, including offset time, duration, and predicted class, to an output file.
- * The total duration of all parallel inferences is then returned.
- *
- * @param inference The inference model implementing the AbstractInference interface.
- * @param images A vector of OpenCV Mat objects representing the input images to be processed.
- * @return The total inference duration in milliseconds for all the images processed in parallel.
- */
 float test_parallel(const AbstractInference& inference, const std::vector<cv::Mat>& images)
 {
     const auto [out_tensors, milliseconds] = inference.predict_all(images);
@@ -70,16 +49,6 @@ float test_parallel(const AbstractInference& inference, const std::vector<cv::Ma
     return milliseconds;
 }
 
-/**
- * @brief Executes sequential inference on a set of input images and calculates the total duration.
- *
- * This function processes a vector of images one by one, invoking the inference model for each image.
- * It accumulates the inference duration for each image into a total duration and returns it.
- *
- * @param inference The inference model implementing the AbstractInference interface.
- * @param images A vector of OpenCV Mat objects representing the input images to be processed.
- * @return The total inference duration in milliseconds for all the images.
- */
 float test_sequential(const AbstractInference& inference, const std::vector<cv::Mat>& images)
 {
     float total_duration = 0;
@@ -91,46 +60,33 @@ float test_sequential(const AbstractInference& inference, const std::vector<cv::
     return total_duration;
 }
 
-/**
- * @brief Creates an inference object based on the specified model and available acceleration backend.
- *
- * This function determines the type of inference backend to use depending on the compilation flags
- * (e.g., TensorRT, FrugallyDeep, or ONNX Runtime with CUDA). It then instantiates and returns the
- * corresponding inference object. If no supported backend is defined, it throws an exception.
- *
- * @param model_path The file path to the trained inference model.
- * @return A pointer to an AbstractInference object configured for the specified model.
- * @throws std::runtime_error If no supported inference backend is available.
- */
-AbstractInference* create_inference(const std::string& model_path)
+
+std::vector<std::pair<std::string, std::unique_ptr<AbstractInference>>> create_inference(const std::string& model_path)
 {
-#if ACCELERATE_TENSOR_RT
-    return new TensorRTInference(model_path, nvinfer1::ILogger::Severity::kINFO);
-#elif ACCELERATE_FRUGALLY_DEEP
-    return new FrugallyDeepInference(model_path);
-#elif ACCELERATE_ONNX_RUNTIME_CUDA
-    return new OnnxRuntimeCudaInference(model_path);
-#else
-    throw std::runtime_error("Inference type not supported (Unknown).");
+    std::vector<std::pair<std::string, std::unique_ptr<AbstractInference>>> inference_engines;
+#if defined(ACCELERATE_TENSOR_RT)
+    inference_engines.emplace_back("TensorRT", std::make_unique<TensorRTInference>(model_path));
 #endif
+
+#if defined(ACCELERATE_FRUGALLY_DEEP)
+    inference_engines.emplace_back("Frugally Deep", std::make_unique<FrugallyDeepInference>(model_path));
+#endif
+
+#if defined(ACCELERATE_ONNX_RUNTIME_CUDA)
+    inference_engines.emplace_back("Onnx Runtime CUDA", std::make_unique<OnnxCudaInference>(model_path));
+#endif
+
+#if defined(ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU)
+    inference_engines.emplace_back("Onnx Runtime OpenVINO CPU", std::make_unique<OnnxOpenVinoCpuInference>(model_path));
+#endif
+
+#if defined(ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU)
+    inference_engines.emplace_back("Onnx Runtime OpenVINO GPU", std::make_unique<OnnxOpenVinoCpuInference>(model_path));
+#endif
+
+    return inference_engines;
 }
 
-
-/**
- * @brief Executes a single test iteration on both sequential and parallel inference modes.
- *
- * This function measures the performance of sequential and parallel inference for a given
- * test iteration. It executes the inference using the provided images and tracks
- * the execution times for both sequential and parallel runs. The results of these runs
- * are appended to the respective vectors for further analysis and are displayed after
- * the execution.
- *
- * @param iteration The current test iteration number.
- * @param sequential_run A vector storing the execution times of all completed sequential tests.
- * @param parallel_run A vector storing the execution times of all completed parallel tests.
- * @param inference A pointer to an AbstractInference object representing the inference model to be tested.
- * @param images A vector of input images to be used in the test.
- */
 void evaluate_inference_performance(const int iteration, std::vector<float>& sequential_run,
                                     std::vector<float>& parallel_run,
                                     const AbstractInference* inference, const std::vector<cv::Mat>& images)
@@ -146,54 +102,24 @@ void evaluate_inference_performance(const int iteration, std::vector<float>& seq
     std::cout << " ms" << std::endl;
 }
 
-
-/**
- * @brief Executes a series of tests comparing sequential and parallel inference times.
- *
- * This function initializes an inference engine with the given model, loads images
- * from the data path, and runs a predetermined number of tests. Each test measures
- * both sequential and parallel inference performance. Results are processed and displayed
- * after each iteration.
- *
- * @param model_path Path to the model file used for inference.
- * @param data_path Path to the directory containing image data for testing.
- * @return Returns 0 upon successful completion of all tests.
- */
 int evaluate_model_performance(const std::string& model_path, const std::string& data_path)
 {
     const auto inference = create_inference(model_path);
     const auto images = load_images(data_path);
-
-    constexpr int total_tests = 10;
-    std::vector<float> parallel_run, sequential_run;
-
-#if ACCELERATE_FRUGALLY_DEEP
-    reinterpret_cast<FrugallyDeepInference*>(inference)->set_parallel_strategy(ParallelStrategy::STD_PARALLEL_FOREACH);
-#endif
-    for (int i = 0; i < total_tests; i++)
+    for (const auto& [name, inference] : inference)
     {
-        evaluate_inference_performance(i, sequential_run, parallel_run, inference, images);
+        constexpr int iterations = 5;
+        std::vector<float> sequential_run;
+        std::vector<float> parallel_run;
+        std::cout << "Running Inference Type: " << name << std::endl;
+        for (int i = 0; i < iterations; ++i)
+        {
+            evaluate_inference_performance(i, sequential_run, parallel_run, inference.get(), images);
+        }
     }
-#if ACCELERATE_FRUGALLY_DEEP
-    reinterpret_cast<FrugallyDeepInference*>(inference)->set_parallel_strategy(ParallelStrategy::STD_THREADING);
-    for (int i = 0; i < total_tests; i++)
-    {
-        evaluate_inference_performance(i, sequential_run, parallel_run, inference, images);
-    }
-#endif
-    delete inference;
     return 0;
 }
 
-/**
- * @brief Displays usage instructions and available options for the application.
- *
- * This function outputs to the console the required command-line arguments for
- * executing the application. It specifies the format for providing the inference
- * model path, data path, and an optional help flag. The function serves as a
- * guide for users by describing the purpose of each supported command-line
- * argument.
- */
 void print_usage()
 {
     std::cout << "Usage: InferenceTest --model <model_path> --data <data_path>" << std::endl;
@@ -203,21 +129,6 @@ void print_usage()
     std::cout << "  --help     Display this help message" << std::endl;
 }
 
-/**
- * @brief Processes command-line arguments and executes the test function.
- *
- * This function validates the presence of the required command-line arguments
- * `--model` and `--data`. If either of these arguments is missing, it prints a
- * usage guide to the console via `print_usage()` and exits with a return code of 1.
- * Otherwise, it retrieves the paths for the inference model and data input
- * and passes them to the `test` function for execution.
- *
- * @param args A map containing the parsed command-line arguments where keys
- *             are argument names and values are their corresponding values.
- *
- * @return int Returns 1 if required arguments are missing, otherwise returns
- *             the result of the `test` execution.
- */
 int execute_model_test(const std::map<std::string, std::string>& args)
 {
     if (has_args(args, {HELP_ARG}))
@@ -235,22 +146,6 @@ int execute_model_test(const std::map<std::string, std::string>& args)
     return evaluate_model_performance(model_path, data_path);
 }
 
-/**
- * @brief Main execution point for the program.
- *
- * This function initializes the command-line argument parser, retrieves the
- * parsed arguments, and processes them. It delegates further execution by
- * calling the `process_args` function, which handles the main logic based
- * on the parsed arguments.
- *
- * @param argc The number of command-line arguments, including the program name.
- * @param argv Array of C-style strings containing the command-line arguments.
- *             These arguments are expected to include options for specifying
- *             the inference model and data paths.
- *
- * @return int Returns the exit code of the program. This value is obtained
- *             directly from the result of the `process_args` function.
- */
 int main(const int argc, char* argv[])
 {
     const auto arguments = get_args(argc, argv);

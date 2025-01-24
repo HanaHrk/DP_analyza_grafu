@@ -3,16 +3,17 @@
 #include <filesystem>
 #else
 #include <Windows.h>
+#include <__msvc_filebuf.hpp>
 #endif
 #include <functional>
 #include <stack>
 #include <vector>
-#include <__msvc_filebuf.hpp>
 
 
 const std::vector<std::string> extensions = {".png", ".jpg", ".jpeg", ".bmp"};
 
-std::vector<std::string> find_all_images(const std::string &root_path) {
+std::vector<std::string> find_all_images(const std::string& root_path)
+{
     std::vector<std::string> image_files;
 #ifdef __unix__
     try {
@@ -36,33 +37,42 @@ std::vector<std::string> find_all_images(const std::string &root_path) {
 #else
     std::vector<std::string> folders;
     folders.push_back(root_path);
-    while (!folders.empty()) {
+    while (!folders.empty())
+    {
         const auto root = folders.back();
         folders.erase(folders.begin() + folders.size() - 1);
         WIN32_FIND_DATA data;
         const std::string search_path = root + "\\*.*";
         const auto hFind = FindFirstFile(search_path.c_str(), &data);
 
-        if (hFind == INVALID_HANDLE_VALUE) {
+        if (hFind == INVALID_HANDLE_VALUE)
+        {
             throw std::runtime_error("FindFirstFile failed");
         }
 
-        do {
+        do
+        {
             std::string file_name = data.cFileName;
-            if (file_name == "." || file_name == "..") {
+            if (file_name == "." || file_name == "..")
+            {
                 continue;
             }
             std::string full_path = root + "\\" + file_name;
 
-            if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
                 folders.push_back(full_path);
-            } else {
+            }
+            else
+            {
                 std::string extension = file_name.substr(file_name.find_last_of('.'));
-                if (find(extensions.begin(), extensions.end(), extension) != extensions.end()) {
+                if (find(extensions.begin(), extensions.end(), extension) != extensions.end())
+                {
                     image_files.push_back(full_path);
                 }
             }
-        } while (FindNextFile(hFind, &data));
+        }
+        while (FindNextFile(hFind, &data));
         FindClose(hFind);
     }
 #endif
