@@ -1,7 +1,7 @@
 #ifdef ACCELERATE_TENSOR_RT
 #include <future>
 #include "ImageUtils.h"
-#include "inference/TensorRTInference.h"
+#include "TensorRTInference.h"
 #include "Logger.h"
 #include <Windows.h>
 

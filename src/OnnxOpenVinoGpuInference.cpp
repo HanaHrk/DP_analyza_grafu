@@ -59,7 +59,7 @@ out_tensor OnnxOpenVinoGpuInference::predict(const cv::Mat &image) const {
     const auto output_tensor_name_prt = output_tensor_name.c_str();
 
     cl::Buffer shared_buffer_input(open_cl->_context, CL_MEM_READ_WRITE, input_size, nullptr, &err);
-    cl::Buffer shared_buffer_output(open_cl->_context, CL_MEM_READ_WRITE, output_size, NULL, &err);
+    cl::Buffer shared_buffer_output(open_cl->_context, CL_MEM_READ_WRITE, output_size, nullptr, &err);
     {
         const auto buffer = reinterpret_cast<const void *>(image_data.data());
         open_cl->_queue.enqueueWriteBuffer(shared_buffer_input, true, 0, input_size, buffer);

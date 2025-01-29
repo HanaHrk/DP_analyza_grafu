@@ -66,6 +66,7 @@ set(SOURCES
         src/OnnxOpenVinoCpuInference.cpp
         src/OnnxOpenVinoGpuInference.cpp
         src/include/OnnxOpenVinoGpuInference.h
+        src/include/ThreadUtils.h
 )
 ########### ADD EXECUTABLES
 project(${PROJECT_NAME} LANGUAGES CXX)
@@ -123,7 +124,8 @@ IF (${ACCELERATE_TENSOR_RT})
     target_link_libraries(${PROJECT_NAME} CUDA::cudart ${PLUGIN_LIBS})
     target_include_directories(${PROJECT_NAME} PRIVATE ${TENSOR_RT_ROOT}/include src/include)
     target_compile_definitions(${PROJECT_NAME} PRIVATE ACCELERATE_TENSOR_RT)
-ELSEIF (${ACCELERATE_FRUGALLY_DEEP})
+ENDIF () # TENSOR_RT
+IF (${ACCELERATE_FRUGALLY_DEEP})
     ########### LINK FRUGALLY DEEP FOR INFERENCING
     target_include_directories(${PROJECT_NAME}
             PRIVATE
@@ -134,7 +136,9 @@ ELSEIF (${ACCELERATE_FRUGALLY_DEEP})
             src/include
     )
     target_compile_definitions(${PROJECT_NAME} PRIVATE ACCELERATE_FRUGALLY_DEEP)
-ELSEIF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU})
+ENDIF () # FRUGALLY DEEP
+
+IF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU})
     ########### LINK ONNX RUNTIME WITH CUDA FOR INFERENCING
     if (${ACCELERATE_ONNX_RUNTIME_CUDA})
         list(APPEND PLUGINS "onnxruntime_providers_cuda")
@@ -150,12 +154,10 @@ ELSEIF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_C
 
         list(APPEND PLUGINS "onnxruntime_providers_openvino")
         list(APPEND PLUGINS "custom_op_openvino_wrapper_library")
-        message("aaaaaaaaaaaaa ${OpenVINO_DIR}")
         if (NOT DEFINED OpenVINO_DIR)
             message(SEND_ERROR "\"OpenVINO_DIR\" is required")
             return()
         endif ()
-        message("bbbbbbbbbbbb ${OpenVINO_DIR}")
 
         if (${CMAKE_BUILD_TYPE} MATCHES "Release")
             list(APPEND OPENVINO_LIBS "openvino")
@@ -219,9 +221,9 @@ ELSEIF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_C
     endif ()
 
     if (${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU})
-        #find_package(OpenCL REQUIRED)
-        #target_link_libraries(${PROJECT_NAME} OpenCL::OpenCL)
-        #message("OpenCL library found.")
+        find_package(OpenCL REQUIRED)
+        target_link_libraries(${PROJECT_NAME} OpenCL::OpenCL)
+        message("OpenCL library found.")
     endif ()
     if (NOT DEFINED OnnxRuntime_DIR)
         message(SEND_ERROR "\"OnnxRuntime_DIR\" is required")
@@ -262,7 +264,7 @@ ELSEIF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_C
             ${OpenVINO_DIR}/../include
             src/include
     )
-ENDIF ()
+ENDIF () # ONNX RUNTIME
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
         ${COMPILE_OPTIONS}

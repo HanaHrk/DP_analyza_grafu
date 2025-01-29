@@ -3,7 +3,7 @@
 
 #include <fdeep/fdeep.hpp>
 #include <execution>
-#include "../AbstractInference.h"
+#include "AbstractInference.h"
 
 
 /**
@@ -20,10 +20,9 @@
  * requiring high-throughput computation or concurrent task execution, making it
  * suitable for multi-core or distributed system architectures.
  */
-enum class ParallelStrategy: int
-{
-    STD_PARALLEL_FOREACH = 0,
-    STD_THREADING = 1
+enum class ParallelStrategy {
+    STD_PARALLEL_FOREACH,
+    STD_THREADING
 };
 
 /**
@@ -41,8 +40,7 @@ enum class ParallelStrategy: int
  * framework. It is ideal for scenarios where lightweight deep learning inference
  * is required without the overhead of a heavyweight deep learning library.
  */
-class FrugallyDeepInference final : public AbstractInference
-{
+class FrugallyDeepInference final : public AbstractInference {
     /**
      * @class model_
      *
@@ -86,7 +84,7 @@ class FrugallyDeepInference final : public AbstractInference
      * @param image The input image as an OpenCV cv::Mat object to be transformed into a tensor.
      * @return A frugally-deep tensor containing the transformed image data.
      */
-    [[nodiscard]] fdeep::tensor to_tensor(const cv::Mat& image) const;
+    [[nodiscard]] fdeep::tensor to_tensor(const cv::Mat &image) const;
 
     /**
      * @brief Provides a callback function for performing inference using the FrugallyDeep model.
@@ -101,9 +99,9 @@ class FrugallyDeepInference final : public AbstractInference
      * @return A function object that performs inference on an input image, computes elapsed times,
      *         and updates the provided output tensor vector.
      */
-    [[nodiscard]] std::function<void(const std::chrono::time_point<std::chrono::steady_clock>,
-                                     std::vector<OutParTensor>&, std::atomic<int>&,
-                                     const cv::Mat&)> inference_callback() const;
+    [[nodiscard]] std::function<void(const std::chrono::time_point<std::chrono::steady_clock> &,
+                                     std::vector<OutParTensor> &, std::atomic_int &, std::atomic_int &,
+                                     const cv::Mat &)> inference_callback() const;
 
     /**
      * @brief Executes inference in parallel on a batch of input images and stores the results in output tensors.
@@ -117,12 +115,12 @@ class FrugallyDeepInference final : public AbstractInference
      * @param out_parallel_tensors A vector of output tensors where the inference results will be stored.
      * @param index An atomic integer that acts as a shared counter to handle indexing or task tracking.
      */
-    void run_parallel(const std::vector<cv::Mat>& images,
-                      std::vector<OutParTensor>& out_parallel_tensors,
-                      std::atomic<int>& index) const;
+    void run_parallel(const std::vector<cv::Mat> &images,
+                      std::vector<OutParTensor> &out_parallel_tensors,
+                      std::atomic<int> &index, std::atomic_int &max_threads) const;
 
 public:
-    explicit FrugallyDeepInference(const std::string& model_path);
+    explicit FrugallyDeepInference(const std::string &model_path, const ParallelStrategy &parallel_strategy);
 
     ~FrugallyDeepInference() override;
 
@@ -135,7 +133,7 @@ public:
      *
      * @param parallel_strategy The parallel execution strategy to be applied.
      */
-    void set_parallel_strategy(const ParallelStrategy& parallel_strategy);
+    void set_parallel_strategy(const ParallelStrategy &parallel_strategy);
 
     /**
      * @brief A function or method responsible for generating predictions based
@@ -155,7 +153,7 @@ public:
      * @return The predicted outcome or results, which could be a scalar, a vector,
      *         a matrix, or any other structure, depending on the model and input.
      */
-    [[nodiscard]] OutTensor predict(const cv::Mat& image) const override;
+    [[nodiscard]] OutTensor predict(const cv::Mat &image) const override;
 
     /**
      * @function predict_all
@@ -173,6 +171,7 @@ public:
      * @return A collection of predictions corresponding to the input data. The structure
      *         of the returned predictions matches the design of the model's output.
      */
-    [[nodiscard]] OutParTensors predict_all(const std::vector<cv::Mat>& images) const override;
+    [[nodiscard]] OutParTensors predict_all(const std::vector<cv::Mat> &images) const override;
 };
+
 #endif
