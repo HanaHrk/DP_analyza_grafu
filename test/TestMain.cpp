@@ -7,6 +7,7 @@
 #include "OnnxCudaInference.h"
 #include "OnnxOpenVinoCpuInference.h"
 #include "OnnxOpenVinoGpuInference.h"
+#include "ThreadUtils.h"
 
 const std::string TENSORRT_OUTPUT_FILE = "tensorrt-output.csv";
 const std::string FRUGALLY_DEEP_OUTPUT_FILE = "frugallydeep-output.csv";
@@ -29,26 +30,32 @@ std::ofstream ofstream(UNKNOWN_OUTPUT_FILE);
 #endif
 
 
-std::string to_out_string(const float f) {
-    if (f == 0) {
+std::string to_out_string(const float f)
+{
+    if (f == 0)
+    {
         return "-";
     }
     return std::to_string(f);
 }
 
-float test_parallel(const AbstractInference &inference, const std::vector<cv::Mat> &images) {
+float test_parallel(const AbstractInference& inference, const std::vector<cv::Mat>& images)
+{
     const auto [out_tensors, milliseconds] = inference.predict_all(images);
     ofstream << "Offset;Duration;Class;\n";
-    for (const auto &[predictions, milliseconds, offset_milliseconds]: out_tensors) {
+    for (const auto& [predictions, milliseconds, offset_milliseconds] : out_tensors)
+    {
         ofstream << offset_milliseconds << ";" << milliseconds << ";"
-                 << argmax(predictions) << ";\n";
+            << argmax(predictions) << ";\n";
     }
     return milliseconds;
 }
 
-float test_sequential(const AbstractInference &inference, const std::vector<cv::Mat> &images) {
+float test_sequential(const AbstractInference& inference, const std::vector<cv::Mat>& images)
+{
     float total_duration = 0;
-    for (const auto &image: images) {
+    for (const auto& image : images)
+    {
         const auto [predictions, milliseconds] = inference.predict(image);
         total_duration += milliseconds;
     }
@@ -57,15 +64,17 @@ float test_sequential(const AbstractInference &inference, const std::vector<cv::
 
 
 std::vector<std::pair<std::string, std::unique_ptr<AbstractInference>>>
-create_inference(const std::string &model_path) {
+create_inference(const std::string& model_path)
+{
     std::vector<std::pair<std::string, std::unique_ptr<AbstractInference>>> inference_engines;
 #if defined(ACCELERATE_TENSOR_RT)
-    inference_engines.emplace_back("TensorRT", std::make_unique<TensorRTInference>(model_path));
+    inference_engines.emplace_back(
+        "TensorRT", std::make_unique<TensorRTInference>(model_path, nvinfer1::ILogger::Severity::kERROR));
 #endif
 
 #if defined(ACCELERATE_FRUGALLY_DEEP)
     inference_engines.emplace_back("Frugally Deep", std::make_unique<FrugallyDeepInference>(model_path,
-                                                                                            ParallelStrategy::STD_PARALLEL_FOREACH));
+                                       ParallelStrategy::STD_PARALLEL_FOREACH));
 #endif
 
 #if defined(ACCELERATE_ONNX_RUNTIME_CUDA)
@@ -83,36 +92,50 @@ create_inference(const std::string &model_path) {
     return inference_engines;
 }
 
-void evaluate_inference_performance(const int iteration, std::vector<float> &sequential_run,
-                                    std::vector<float> &parallel_run,
-                                    const AbstractInference *inference, const std::vector<cv::Mat> &images) {
+void evaluate_inference_performance(const int iteration, std::vector<float>& sequential_run,
+                                    std::vector<float>& parallel_run,
+                                    const AbstractInference* inference, const std::vector<cv::Mat>& images)
+{
     std::cout << "Iteration: " << iteration << std::endl;
     sequential_run.push_back(test_sequential(*inference, images));
     std::cout << "Sequential time: ";
     std::cout << sequential_run[iteration];
     std::cout << " ms" << std::endl;
+#if WIN32
+    std::atomic_bool stop_monitor{false};
+    auto threads_monitor = find_thread_count(stop_monitor);
+#endif
+
     parallel_run.push_back(test_parallel(*inference, images));
+#if WIN32
+    stop_monitor = true;
+    threads_monitor.join();
+#endif
     std::cout << "Parallel time: ";
     std::cout << parallel_run[iteration];
     std::cout << " ms" << std::endl;
 }
 
-int evaluate_model_performance(const std::string &model_path, const std::string &data_path) {
+int evaluate_model_performance(const std::string& model_path, const std::string& data_path)
+{
     const auto inference = create_inference(model_path);
     const auto images = load_images(data_path);
-    for (const auto &[name, inference]: inference) {
+    for (const auto& [name, inference] : inference)
+    {
         constexpr int iterations = 5;
         std::vector<float> sequential_run;
         std::vector<float> parallel_run;
         std::cout << "Running Inference Type: " << name << std::endl;
-        for (int i = 0; i < iterations; ++i) {
+        for (int i = 0; i < iterations; ++i)
+        {
             evaluate_inference_performance(i, sequential_run, parallel_run, inference.get(), images);
         }
     }
     return 0;
 }
 
-void print_usage() {
+void print_usage()
+{
     std::cout << "Usage: InferenceTest --model <model_path> --data <data_path>" << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << "  --model    Path to the inference model file (required)" << std::endl;
@@ -120,21 +143,25 @@ void print_usage() {
     std::cout << "  --help     Display this help message" << std::endl;
 }
 
-int execute_model_test(const std::map<std::string, std::string> &args) {
-    if (has_args(args, {HELP_ARG})) {
+int execute_model_test(const std::map<std::string, std::string>& args)
+{
+    if (has_args(args, {HELP_ARG}))
+    {
         print_usage();
         return 0;
     }
-    if (!has_args(args, {MODEL_ARG, DATA_ARG})) {
+    if (!has_args(args, {MODEL_ARG, DATA_ARG}))
+    {
         print_usage();
         return 1;
     }
-    const auto &model_path = args.at(MODEL_ARG);
-    const auto &data_path = args.at(DATA_ARG);
+    const auto& model_path = args.at(MODEL_ARG);
+    const auto& data_path = args.at(DATA_ARG);
     return evaluate_model_performance(model_path, data_path);
 }
 
-int main(const int argc, char *argv[]) {
+int main(const int argc, char* argv[])
+{
     const auto arguments = get_args(argc, argv);
     return execute_model_test(arguments);
 }
