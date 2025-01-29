@@ -1,10 +1,11 @@
-#if defined(ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU)
+#ifdef ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU
+
 #include "OnnxOpenVinoCpuInference.h"
 #include "StringUtils.h"
+#include <openvino/openvino.hpp>
 
 
-OnnxOpenVinoCpuInference::OnnxOpenVinoCpuInference(const std::string& model_path)
-{
+OnnxOpenVinoCpuInference::OnnxOpenVinoCpuInference(const std::string &model_path) {
     Ort::ThreadingOptions thread_options;
     thread_options.SetGlobalIntraOpNumThreads(1);
     Ort::SessionOptions session_options = OnnxOpenVinoCpuInference::build_session_options();
@@ -16,8 +17,9 @@ OnnxOpenVinoCpuInference::OnnxOpenVinoCpuInference(const std::string& model_path
 }
 
 
-Ort::SessionOptions OnnxOpenVinoCpuInference::build_session_options()
-{
+Ort::SessionOptions OnnxOpenVinoCpuInference::build_session_options() {
+
+    const auto a = Ort::GetAvailableProviders();
     Ort::SessionOptions session_options;
     OrtOpenVINOProviderOptions open_vino_provider_options;
     open_vino_provider_options.device_type = "CPU_FP32";
@@ -30,13 +32,11 @@ Ort::SessionOptions OnnxOpenVinoCpuInference::build_session_options()
 }
 
 
-Ort::MemoryInfo OnnxOpenVinoCpuInference::build_memory_info()
-{
+Ort::MemoryInfo OnnxOpenVinoCpuInference::build_memory_info() {
     return Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
 }
 
-out_tensor OnnxOpenVinoCpuInference::predict(const cv::Mat& image) const
-{
+out_tensor OnnxOpenVinoCpuInference::predict(const cv::Mat &image) const {
     out_tensor out_tensor;
     const auto start = get_time();
     auto [input_shape, output_shape] = fetch_shapes();
@@ -66,9 +66,9 @@ out_tensor OnnxOpenVinoCpuInference::predict(const cv::Mat& image) const
     return out_tensor;
 }
 
-out_parallel_tensors OnnxOpenVinoCpuInference::predict_all(const std::vector<cv::Mat>& images) const
-{
+out_parallel_tensors OnnxOpenVinoCpuInference::predict_all(const std::vector<cv::Mat> &images) const {
     out_parallel_tensors parallel_tensors;
     return parallel_tensors;
 }
+
 #endif

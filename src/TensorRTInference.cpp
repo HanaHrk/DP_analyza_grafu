@@ -1,4 +1,4 @@
-#if ACCELERATE_TENSOR_RT
+#ifdef ACCELERATE_TENSOR_RT
 #include <future>
 #include "ImageUtils.h"
 #include "inference/TensorRTInference.h"

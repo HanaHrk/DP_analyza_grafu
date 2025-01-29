@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.23.5)
 set(CMAKE_CXX_STANDARD 17)
 
+set(OpenVINO_DIR "C:/Users/hanah/Downloads/openvino_2024.6.0")
+
 ########### GLOBAL VARIABLES - CAN BE CHANGED
 set(OpenCV_SUBDIR "/x64/vc16")
 
@@ -11,7 +13,6 @@ OPTION(ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU "Accelerate inference using Onnx-Ru
 OPTION(ACCELERATE_TENSOR_RT "Accelerate inference using TensorRT." OFF)
 OPTION(ACCELERATE_FRUGALLY_DEEP "Accelerate inference using Frugally Deep." OFF)
 
-
 SET(${ACCELERATE_ONNX_RUNTIME_CUDA} OFF CACHE BOOL "Accelerate inference using Onnx-Runtime with CUDA.")
 SET(${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU} OFF CACHE BOOL "Accelerate inference using Onnx-Runtime with OpenVINO on CPU.")
 SET(${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU} OFF CACHE BOOL "Accelerate inference using Onnx-Runtime with OpenVINO on GPU.")
@@ -19,19 +20,24 @@ SET(${ACCELERATE_TENSOR_RT} OFF CACHE BOOL "Accelerate inference using TensorRT.
 SET(${ACCELERATE_FRUGALLY_DEEP} OFF CACHE BOOL "Accelerate inference using Frugally Deep.")
 
 if (${ACCELERATE_ONNX_RUNTIME_CUDA})
-    message("Program compiled for inferencing upon OnnxRuntime running with CUDAExecutionProvider (GPU).")
+    list(APPEND COMPILE_OPTIONS ACCELERATE_ONNX_RUNTIME_CUDA)
+    message("Program compiled for inference upon OnnxRuntime running with CUDAExecutionProvider (GPU).")
 endif ()
 if (${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU})
-    message("Program compiled for inferencing upon OnnxRuntime running with OpenVINOExecutionProvider (CPU).")
+    list(APPEND COMPILE_OPTIONS ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU)
+    message("Program compiled for inference upon OnnxRuntime running with OpenVINOExecutionProvider (CPU).")
 endif ()
 if (${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU})
-    message("Program compiled for inferencing upon OnnxRuntime running with OpenVINOExecutionProvider (GPU).")
+    list(APPEND COMPILE_OPTIONS ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU)
+    message("Program compiled for inference upon OnnxRuntime running with OpenVINOExecutionProvider (GPU).")
 endif ()
 if (${ACCELERATE_TENSOR_RT})
-    message("Program compiled for inferencing upon TensorRT (GPU).")
+    list(APPEND COMPILE_OPTIONS ACCELERATE_TENSOR_RT)
+    message("Program compiled for inference upon TensorRT (GPU).")
 endif ()
 if (${ACCELERATE_FRUGALLY_DEEP})
-    message("Program compiled for inferencing upon FrugallyDeep (CPU).")
+    list(APPEND COMPILE_OPTIONS ACCELERATE_FRUGALLY_DEEP)
+    message("Program compiled for inference upon FrugallyDeep (CPU).")
 endif ()
 
 ########### METADATA
@@ -40,7 +46,6 @@ set(SOURCES
         src/FileUtils.cpp
         src/ImageUtils.cpp
         src/TensorRTInference.cpp
-        src/include/Model.h
         src/include/MathUtils.h
         src/include/Logger.h
         src/include/ImageUtils.h
@@ -60,6 +65,7 @@ set(SOURCES
         src/AbstractInference.cpp
         src/OnnxOpenVinoCpuInference.cpp
         src/OnnxOpenVinoGpuInference.cpp
+        src/include/OnnxOpenVinoGpuInference.h
 )
 ########### ADD EXECUTABLES
 project(${PROJECT_NAME} LANGUAGES CXX)
@@ -116,7 +122,7 @@ IF (${ACCELERATE_TENSOR_RT})
 
     target_link_libraries(${PROJECT_NAME} CUDA::cudart ${PLUGIN_LIBS})
     target_include_directories(${PROJECT_NAME} PRIVATE ${TENSOR_RT_ROOT}/include src/include)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE ACCELERATE_TENSOR_RT=${ACCELERATE_TENSOR_RT})
+    target_compile_definitions(${PROJECT_NAME} PRIVATE ACCELERATE_TENSOR_RT)
 ELSEIF (${ACCELERATE_FRUGALLY_DEEP})
     ########### LINK FRUGALLY DEEP FOR INFERENCING
     target_include_directories(${PROJECT_NAME}
@@ -127,7 +133,7 @@ ELSEIF (${ACCELERATE_FRUGALLY_DEEP})
             libs/frugally-deep/include
             src/include
     )
-    target_compile_definitions(${PROJECT_NAME} PRIVATE ACCELERATE_FRUGALLY_DEEP=${ACCELERATE_FRUGALLY_DEEP})
+    target_compile_definitions(${PROJECT_NAME} PRIVATE ACCELERATE_FRUGALLY_DEEP)
 ELSEIF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU})
     ########### LINK ONNX RUNTIME WITH CUDA FOR INFERENCING
     if (${ACCELERATE_ONNX_RUNTIME_CUDA})
@@ -138,18 +144,94 @@ ELSEIF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_C
         message("CUDAToolkit successfully found.")
     endif ()
     if (${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU})
-        ### TODO Add
-        ### list(APPEND PLUGINS "onnxruntime_providers_openvino")
+        find_package(Threads REQUIRED)
+        add_definitions(-DUSE_OPENVINO)
+        find_package(OpenVINO REQUIRED COMPONENTS Runtime HINTS "${OpenVINO_DIR}/runtime/cmake")
+
+        list(APPEND PLUGINS "onnxruntime_providers_openvino")
+        list(APPEND PLUGINS "custom_op_openvino_wrapper_library")
+        message("aaaaaaaaaaaaa ${OpenVINO_DIR}")
+        if (NOT DEFINED OpenVINO_DIR)
+            message(SEND_ERROR "\"OpenVINO_DIR\" is required")
+            return()
+        endif ()
+        message("bbbbbbbbbbbb ${OpenVINO_DIR}")
+
+        if (${CMAKE_BUILD_TYPE} MATCHES "Release")
+            list(APPEND OPENVINO_LIBS "openvino")
+            list(APPEND OPENVINO_LIBS "openvino_c")
+            list(APPEND OPENVINO_LIBS "openvino_onnx_frontend")
+            list(APPEND OPENVINO_LIBS "openvino_paddle_frontend")
+            list(APPEND OPENVINO_LIBS "openvino_pytorch_frontend")
+            list(APPEND OPENVINO_LIBS "openvino_tensorflow_frontend")
+            list(APPEND OPENVINO_LIBS "openvino_tensorflow_lite_frontend")
+
+            list(APPEND OPENVINO_DLLS "openvino_auto_batch_plugin")
+            list(APPEND OPENVINO_DLLS "openvino_auto_plugin")
+            list(APPEND OPENVINO_DLLS "openvino_c")
+            list(APPEND OPENVINO_DLLS "openvino_hetero_plugin")
+            list(APPEND OPENVINO_DLLS "openvino_intel_cpu_plugin")
+            list(APPEND OPENVINO_DLLS "openvino_intel_gpu_plugin")
+            list(APPEND OPENVINO_DLLS "openvino_intel_npu_plugin")
+            list(APPEND OPENVINO_DLLS "openvino_ir_frontend")
+            list(APPEND OPENVINO_DLLS "openvino_onnx_frontend")
+            list(APPEND OPENVINO_DLLS "openvino_paddle_frontend")
+            list(APPEND OPENVINO_DLLS "openvino_pytorch_frontend")
+            list(APPEND OPENVINO_DLLS "openvino_tensorflow_frontend")
+            list(APPEND OPENVINO_DLLS "openvino_tensorflow_lite_frontend")
+        elseif (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+            list(APPEND OPENVINO_LIBS "openvinod")
+            list(APPEND OPENVINO_LIBS "openvino_cd")
+            list(APPEND OPENVINO_LIBS "openvino_onnx_frontendd")
+            list(APPEND OPENVINO_LIBS "openvino_paddle_frontendd")
+            list(APPEND OPENVINO_LIBS "openvino_pytorch_frontendd")
+            list(APPEND OPENVINO_LIBS "openvino_tensorflow_frontendd")
+            list(APPEND OPENVINO_LIBS "openvino_tensorflow_lite_frontendd")
+
+            list(APPEND OPENVINO_DLLS "openvinod")
+            list(APPEND OPENVINO_DLLS "openvino_auto_batch_plugind")
+            list(APPEND OPENVINO_DLLS "openvino_auto_plugind")
+            list(APPEND OPENVINO_DLLS "openvino_cd")
+            list(APPEND OPENVINO_DLLS "openvino_hetero_plugind")
+            list(APPEND OPENVINO_DLLS "openvino_intel_cpu_plugind")
+            list(APPEND OPENVINO_DLLS "openvino_intel_gpu_plugind")
+            list(APPEND OPENVINO_DLLS "openvino_intel_npu_plugind")
+            list(APPEND OPENVINO_DLLS "openvino_ir_frontendd")
+            list(APPEND OPENVINO_DLLS "openvino_onnx_frontendd")
+            list(APPEND OPENVINO_DLLS "openvino_paddle_frontendd")
+            list(APPEND OPENVINO_DLLS "openvino_pytorch_frontendd")
+            list(APPEND OPENVINO_DLLS "openvino_tensorflow_frontendd")
+            list(APPEND OPENVINO_DLLS "openvino_tensorflow_lite_frontendd")
+        endif ()
+        foreach (libName ${OPENVINO_LIBS})
+            find_library(${libName}_lib HINTS ${OpenVINO_DIR}/../lib/intel64/${CMAKE_BUILD_TYPE} NAMES ${libName} PATH_SUFFIXES lib REQUIRED)
+            message(" ------ ${libName} (OpenVINO part) successfully found.")
+            list(APPEND PLUGIN_LIBS "${${libName}_lib}")
+        endforeach ()
+        foreach (libName ${OPENVINO_LIBS})
+            add_custom_command(
+                    TARGET ${PROJECT_NAME} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy
+                    ${OpenVINO_DIR}/../bin/intel64/${CMAKE_BUILD_TYPE}/${libName}.dll
+                    $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+            message(" ------ ${libName} (OpenVINO Runtime part) successfully found.")
+        endforeach ()
     endif ()
-    if (NOT DEFINED ONNX_RUNTIME_ROOT)
-        message(SEND_ERROR "\"ONNX_RUNTIME_ROOT\" is required")
+
+    if (${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU})
+        #find_package(OpenCL REQUIRED)
+        #target_link_libraries(${PROJECT_NAME} OpenCL::OpenCL)
+        #message("OpenCL library found.")
+    endif ()
+    if (NOT DEFINED OnnxRuntime_DIR)
+        message(SEND_ERROR "\"OnnxRuntime_DIR\" is required")
         return()
     endif ()
-    message("Onnx root found at \"${ONNX_RUNTIME_ROOT}\".")
+    message("Onnx root found at \"${OnnxRuntime_DIR}\".")
 
     list(APPEND PLUGINS "onnxruntime")
-    list(APPEND PLUGINS "test_execution_provider")
     list(APPEND PLUGINS "onnxruntime_providers_shared")
+    list(APPEND PLUGINS "test_execution_provider")
     list(APPEND PLUGINS "custom_op_local_function")
     list(APPEND PLUGINS "custom_op_library")
     list(APPEND PLUGINS "custom_op_invalid_library")
@@ -160,11 +242,11 @@ ELSEIF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_C
         add_custom_command(
                 TARGET ${PROJECT_NAME} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy
-                ${ONNX_RUNTIME_ROOT}/build/Windows/RelWithDebInfo/RelWithDebInfo/${libName}.dll
+                ${OnnxRuntime_DIR}/build/Windows/RelWithDebInfo/RelWithDebInfo/${libName}.dll
                 $<TARGET_FILE_DIR:${PROJECT_NAME}>)
         find_library(${libName}_lib
                 NAMES ${libName}
-                HINTS ${ONNX_RUNTIME_ROOT}/build/Windows/RelWithDebInfo/RelWithDebInfo
+                HINTS ${OnnxRuntime_DIR}/build/Windows/RelWithDebInfo/RelWithDebInfo
                 PATH_SUFFIXES lib
                 REQUIRED
         )
@@ -172,16 +254,16 @@ ELSEIF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_C
         list(APPEND PLUGIN_LIBS "${${libName}_lib}")
     endforeach ()
     message("Onnx Runtime libraries successfully found.")
-    target_link_libraries(${PROJECT_NAME} ${PLUGIN_LIBS})
+    target_link_libraries(${PROJECT_NAME} ${PLUGIN_LIBS} Threads::Threads openvino::runtime)
     target_include_directories(${PROJECT_NAME}
             PRIVATE
-            ${ONNX_RUNTIME_ROOT}/include
-            ${ONNX_RUNTIME_ROOT}/include/onnxruntime/core/session
+            ${OnnxRuntime_DIR}/include
+            ${OnnxRuntime_DIR}/include/onnxruntime/core/session
+            ${OpenVINO_DIR}/../include
             src/include
     )
-    target_compile_definitions(${PROJECT_NAME} PRIVATE
-            ACCELERATE_ONNX_RUNTIME_CUDA=${ACCELERATE_ONNX_RUNTIME_CUDA}
-            ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU=${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU}
-            ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU=${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU}
-    )
 ENDIF ()
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+        ${COMPILE_OPTIONS}
+)

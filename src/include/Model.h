@@ -1,5 +1,0 @@
-#pragma once
-
-#if !defined(ACCELERATE_FRUGALLY_DEEP) && !defined(ACCELERATE_TENSOR_RT) && !defined(ACCELERATE_ONNX_RUNTIME_CUDA)
-    #define ACCELERATE_FRUGALLY_DEEP 1
-#endif

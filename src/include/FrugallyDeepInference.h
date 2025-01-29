@@ -1,5 +1,5 @@
 #pragma once
-#if ACCELERATE_FRUGALLY_DEEP
+#ifdef ACCELERATE_FRUGALLY_DEEP
 
 #include <fdeep/fdeep.hpp>
 #include <execution>

@@ -1,4 +1,4 @@
-#if defined(ACCELERATE_ONNX_RUNTIME_CUDA)
+#ifdef ACCELERATE_ONNX_RUNTIME_CUDA
 #include "OnnxCudaInference.h"
 #include "StringUtils.h"
 #include <cuda_runtime.h>

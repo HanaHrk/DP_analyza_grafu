@@ -1,5 +1,5 @@
 #pragma once
-#if defined(ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU)
+#ifdef ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU
 #include "OnnxAbstractInference.h"
 
 class OnnxOpenVinoCpuInference final : public OnnxAbstractInference

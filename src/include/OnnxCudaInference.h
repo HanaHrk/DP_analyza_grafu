@@ -1,5 +1,5 @@
 #pragma once
-#if defined(ACCELERATE_ONNX_RUNTIME_CUDA)
+#ifdef ACCELERATE_ONNX_RUNTIME_CUDA
 #include "OnnxAbstractInference.h"
 
 class OnnxCudaInference final : public OnnxAbstractInference

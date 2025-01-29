@@ -1,4 +1,4 @@
-#if ACCELERATE_FRUGALLY_DEEP
+#ifdef ACCELERATE_FRUGALLY_DEEP
 #include "ImageUtils.h"
 #include "include/inference/FrugallyDeepInference.h"
 
