@@ -22,7 +22,7 @@ void FrugallyDeepInference::set_parallel_strategy(const ParallelStrategy& parall
 
 FrugallyDeepInference::~FrugallyDeepInference() = default;
 
-OutTensor FrugallyDeepInference::predict(const cv::Mat& image) const
+OutTensor FrugallyDeepInference::predict(const cv::Mat& image)
 {
     OutTensor out_tensor;
     const std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::high_resolution_clock::now();

@@ -51,7 +51,7 @@ float test_parallel(const AbstractInference& inference, const std::vector<cv::Ma
     return milliseconds;
 }
 
-float test_sequential(const AbstractInference& inference, const std::vector<cv::Mat>& images)
+float test_sequential(AbstractInference& inference, const std::vector<cv::Mat>& images)
 {
     float total_duration = 0;
     for (const auto& image : images)
@@ -74,7 +74,7 @@ create_inference(const std::string& model_path)
 
 #if defined(ACCELERATE_FRUGALLY_DEEP)
     inference_engines.emplace_back("Frugally Deep", std::make_unique<FrugallyDeepInference>(model_path,
-                                       ParallelStrategy::STD_PARALLEL_FOREACH));
+                                       ParallelStrategy::STD_THREADING));
 #endif
 
 #if defined(ACCELERATE_ONNX_RUNTIME_CUDA)
@@ -94,23 +94,24 @@ create_inference(const std::string& model_path)
 
 void evaluate_inference_performance(const int iteration, std::vector<float>& sequential_run,
                                     std::vector<float>& parallel_run,
-                                    const AbstractInference* inference, const std::vector<cv::Mat>& images)
+                                    AbstractInference* inference, const std::vector<cv::Mat>& images)
 {
     std::cout << "Iteration: " << iteration << std::endl;
     sequential_run.push_back(test_sequential(*inference, images));
     std::cout << "Sequential time: ";
     std::cout << sequential_run[iteration];
     std::cout << " ms" << std::endl;
-#if WIN32
+
+#if WIN32 AND defined(PRINT_STATISTICS)
     std::atomic_bool stop_monitor{false};
     auto threads_monitor = find_thread_count(stop_monitor);
 #endif
-
     parallel_run.push_back(test_parallel(*inference, images));
-#if WIN32
+#if WIN32 AND defined(PRINT_STATISTICS)
     stop_monitor = true;
     threads_monitor.join();
 #endif
+
     std::cout << "Parallel time: ";
     std::cout << parallel_run[iteration];
     std::cout << " ms" << std::endl;
@@ -162,6 +163,14 @@ int execute_model_test(const std::map<std::string, std::string>& args)
 
 int main(const int argc, char* argv[])
 {
-    const auto arguments = get_args(argc, argv);
-    return execute_model_test(arguments);
+    try
+    {
+        const auto arguments = get_args(argc, argv);
+        return execute_model_test(arguments);
+    }
+    catch (std::runtime_error& e)
+    {
+        std::cerr << " [ ERROR ]  " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
 }

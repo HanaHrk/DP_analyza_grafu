@@ -1,6 +1,6 @@
 #pragma once
 
-#if ACCELERATE_TENSOR_RT
+#ifdef ACCELERATE_TENSOR_RT
 #include <NvInfer.h>
 #include <NvOnnxParser.h>
 #include "AbstractInference.h"
@@ -10,6 +10,9 @@ class TensorRTInference final : public AbstractInference
 {
     static constexpr int input_index = 0;
     static constexpr int output_index = 1;
+
+    float handling = 0.0f;
+    float gpu_time = 0.0f;
 
     std::unique_ptr<nvinfer1::ICudaEngine> engine_;
     std::unique_ptr<ProgramLogger> program_logger_;
@@ -39,7 +42,7 @@ class TensorRTInference final : public AbstractInference
     static nvinfer1::ICudaEngine* build_engine(const std::string& onnx_model_path, ProgramLogger& logger);
 
 public:
-    explicit TensorRTInference(const std::string& model_path, const nvinfer1::ILogger::Severity& severity);
+    explicit TensorRTInference(const std::string& model_path, const nvinfer1::ILogger::Severity& severity = nvinfer1::ILogger::Severity::kERROR);
 
     ~TensorRTInference() override;
 
@@ -52,7 +55,7 @@ public:
      *         probabilities or scores for output classes, and the `milliseconds` field indicates the
      *         inference time in milliseconds.
      */
-    [[nodiscard]] OutTensor predict(const cv::Mat& image) const override;
+    [[nodiscard]] OutTensor predict(const cv::Mat& image) override;
 
     /**
      * Performs batch inference on multiple input images using TensorRT and returns the prediction results

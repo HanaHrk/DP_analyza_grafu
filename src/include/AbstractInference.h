@@ -33,7 +33,7 @@ protected:
 public:
     virtual ~AbstractInference() = default;
 
-    [[nodiscard]] virtual out_tensor predict(const cv::Mat& image) const = 0;
+    [[nodiscard]] virtual out_tensor predict(const cv::Mat& image) = 0;
 
     [[nodiscard]] virtual out_parallel_tensors predict_all(const std::vector<cv::Mat>& images) const = 0;
 };

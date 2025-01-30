@@ -155,7 +155,7 @@ public:
      * @return The predicted outcome or results, which could be a scalar, a vector,
      *         a matrix, or any other structure, depending on the model and input.
      */
-    [[nodiscard]] OutTensor predict(const cv::Mat& image) const override;
+    [[nodiscard]] OutTensor predict(const cv::Mat& image) override;
 
     /**
      * @function predict_all

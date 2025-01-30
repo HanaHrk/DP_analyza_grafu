@@ -3,7 +3,10 @@
 #include "ImageUtils.h"
 #include "TensorRTInference.h"
 #include "Logger.h"
+#include <fstream>
 #include <Windows.h>
+
+std::ofstream compute_time("compute_time.log");
 
 constexpr void HANDLE_ERROR(const cudaError_t& e)
 {
@@ -15,7 +18,7 @@ constexpr void HANDLE_ERROR(const cudaError_t& e)
 }
 
 TensorRTInference::TensorRTInference(const std::string& model_path,
-                                     const nvinfer1::ILogger::Severity& severity = nvinfer1::ILogger::Severity::kINFO)
+                                     const nvinfer1::ILogger::Severity& severity)
 {
     this->program_logger_ = std::make_unique<ProgramLogger>(severity);
     this->engine_ = std::unique_ptr<nvinfer1::ICudaEngine>(build_engine(model_path, *this->program_logger_));
@@ -48,7 +51,7 @@ TensorRTInference::~TensorRTInference()
     HANDLE_ERROR(cudaFree(this->tensor_buffers_[output_index]));
 }
 
-OutTensor TensorRTInference::predict(const cv::Mat& image) const
+OutTensor TensorRTInference::predict(const cv::Mat& image)
 {
     OutTensor out_tensor;
     cudaEvent_t end, start;
@@ -59,7 +62,7 @@ OutTensor TensorRTInference::predict(const cv::Mat& image) const
     // Access Tensors props
     const auto input_tensor_name = get_input_tensor_name();
     const auto output_tensor_name = get_output_tensor_name();
-    const auto [nbDims, d] = this->context_->getEngine().getTensorShape(input_tensor_name.c_str());
+    const auto [nb_dims, d] = this->context_->getEngine().getTensorShape(input_tensor_name.c_str());
     const auto input_size = get_tensor_size(input_tensor_name);
     const auto output_size = get_tensor_size(output_tensor_name);
     const auto input_width = static_cast<int>(d[1]);
@@ -69,16 +72,35 @@ OutTensor TensorRTInference::predict(const cv::Mat& image) const
     out_tensor.predictions.resize(output_size / sizeof(float));
 
     const auto image_data = process_image(image, input_width, input_height);
-    HANDLE_ERROR(cudaMemcpy(this->tensor_buffers_[input_index], image_data.data(), input_size,
-                            cudaMemcpyHostToDevice));
+#ifdef PRINT_STATISTICS
+    const auto handling_device_to_host = std::chrono::steady_clock::now();
+#endif
+    HANDLE_ERROR(cudaMemcpy(this->tensor_buffers_[input_index], image_data.data(), input_size, cudaMemcpyHostToDevice));
+#ifdef PRINT_STATISTICS
+    const std::chrono::duration<float, std::milli> handling_device_to_host_duration = std::chrono::steady_clock::now() -
+        handling_device_to_host;
+    const auto gpu = std::chrono::steady_clock::now();
+#endif
+
     if (!this->context_->executeV2(this->tensor_buffers_.data()))
     {
         throw std::exception("Failed to execute context");
     }
-
+#ifdef PRINT_STATISTICS
+    const std::chrono::duration<float, std::milli> gpu_duration = std::chrono::steady_clock::now() - gpu;
+    const auto handling_host_to_device = std::chrono::steady_clock::now();
+#endif
     HANDLE_ERROR(cudaMemcpy(out_tensor.predictions.data(), this->tensor_buffers_[output_index], output_size,
                             cudaMemcpyDeviceToHost));
+#ifdef PRINT_STATISTICS
+    const std::chrono::duration<float, std::milli> handling_host_to_device_duration = std::chrono::steady_clock::now() -
+        handling_host_to_device;
+    handling += handling_host_to_device_duration.count();
+    handling += handling_device_to_host_duration.count();
+    gpu_time += gpu_duration.count();
 
+    compute_time << "H: " << handling << " G: " << gpu_time << std::endl;
+#endif
     create_and_record_event(end, nullptr);
     out_tensor.milliseconds = compute_milliseconds(start, end);
 
@@ -117,13 +139,12 @@ OutParTensors TensorRTInference::predict_all(const std::vector<cv::Mat>& images)
     }
 
     // Final synchronization and cleanup
-    HANDLE_ERROR(cudaEventRecord(end_event, stream));
-    HANDLE_ERROR(cudaStreamSynchronize(stream));
+    HANDLE_ERROR(cudaEventRecord(end_event, nullptr));
     out_par_tensors.milliseconds = compute_milliseconds(start_event, end_event);
 
-    HANDLE_ERROR(cudaStreamDestroy(stream));
     HANDLE_ERROR(cudaEventDestroy(start_event));
     HANDLE_ERROR(cudaEventDestroy(end_event));
+    HANDLE_ERROR(cudaStreamDestroy(stream));
     return out_par_tensors;
 }
 

@@ -12,12 +12,14 @@ OPTION(ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU "Accelerate inference using Onnx-Ru
 OPTION(ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU "Accelerate inference using Onnx-Runtime with OpenVINO on GPU." OFF)
 OPTION(ACCELERATE_TENSOR_RT "Accelerate inference using TensorRT." OFF)
 OPTION(ACCELERATE_FRUGALLY_DEEP "Accelerate inference using Frugally Deep." OFF)
+OPTION(PRINT_STATISTICS "Print thread statistics of program." OFF)
 
 SET(${ACCELERATE_ONNX_RUNTIME_CUDA} OFF CACHE BOOL "Accelerate inference using Onnx-Runtime with CUDA.")
 SET(${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU} OFF CACHE BOOL "Accelerate inference using Onnx-Runtime with OpenVINO on CPU.")
 SET(${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU} OFF CACHE BOOL "Accelerate inference using Onnx-Runtime with OpenVINO on GPU.")
 SET(${ACCELERATE_TENSOR_RT} OFF CACHE BOOL "Accelerate inference using TensorRT.")
 SET(${ACCELERATE_FRUGALLY_DEEP} OFF CACHE BOOL "Accelerate inference using Frugally Deep.")
+SET(${PRINT_STATISTICS} OFF CACHE BOOL "Print thread statistics of program.")
 
 if (${ACCELERATE_ONNX_RUNTIME_CUDA})
     list(APPEND COMPILE_OPTIONS ACCELERATE_ONNX_RUNTIME_CUDA)
@@ -39,11 +41,16 @@ if (${ACCELERATE_FRUGALLY_DEEP})
     list(APPEND COMPILE_OPTIONS ACCELERATE_FRUGALLY_DEEP)
     message("Program compiled for inference upon FrugallyDeep (CPU).")
 endif ()
+if (${PRINT_STATISTICS})
+    list(APPEND COMPILE_OPTIONS PRINT_STATISTICS)
+    message("Program will print statistics information.")
+endif ()
 
 ########### METADATA
 set(PROJECT_NAME InferenceTest)
 set(SOURCES
         src/FileUtils.cpp
+        src/include/FileUtils.h
         src/ImageUtils.cpp
         src/TensorRTInference.cpp
         src/include/MathUtils.h
@@ -138,7 +145,7 @@ IF (${ACCELERATE_FRUGALLY_DEEP})
     target_compile_definitions(${PROJECT_NAME} PRIVATE ACCELERATE_FRUGALLY_DEEP)
 ENDIF () # FRUGALLY DEEP
 
-IF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU})
+IF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU})
     ########### LINK ONNX RUNTIME WITH CUDA FOR INFERENCING
     if (${ACCELERATE_ONNX_RUNTIME_CUDA})
         list(APPEND PLUGINS "onnxruntime_providers_cuda")
@@ -218,6 +225,7 @@ IF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU})
                     $<TARGET_FILE_DIR:${PROJECT_NAME}>)
             message(" ------ ${libName} (OpenVINO Runtime part) successfully found.")
         endforeach ()
+        target_link_libraries(${PROJECT_NAME} ${PLUGIN_LIBS} Threads::Threads openvino::runtime)
     endif ()
 
     if (${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_GPU})
@@ -240,14 +248,12 @@ IF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU})
     list(APPEND PLUGINS "custom_op_get_const_input_test_library")
     message("Searching for Onnx Runtime libraries.")
 
-    foreach (libName ${PLUGINS})
-        add_custom_command(
-                TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                ${OnnxRuntime_DIR}/build/Windows/RelWithDebInfo/RelWithDebInfo/${libName}.dll
-                $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    file(GLOB LIBS "${OnnxRuntime_DIR}/build/Windows/RelWithDebInfo/RelWithDebInfo/*.lib")
+    file(GLOB DLLS "${OnnxRuntime_DIR}/build/Windows/RelWithDebInfo/RelWithDebInfo/*.dll")
+    foreach (libName ${LIBS})
+        get_filename_component(LIB ${libName} NAME_WE)
         find_library(${libName}_lib
-                NAMES ${libName}
+                NAMES ${LIB}
                 HINTS ${OnnxRuntime_DIR}/build/Windows/RelWithDebInfo/RelWithDebInfo
                 PATH_SUFFIXES lib
                 REQUIRED
@@ -255,8 +261,16 @@ IF (${ACCELERATE_ONNX_RUNTIME_CUDA} OR ${ACCELERATE_ONNX_RUNTIME_OPEN_VINO_CPU})
         message(" ------ ${libName} (Onnx Runtime part) successfully found.")
         list(APPEND PLUGIN_LIBS "${${libName}_lib}")
     endforeach ()
+
+        foreach (libName ${DLLS})
+        add_custom_command(
+                TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                ${libName}
+                $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    endforeach ()
     message("Onnx Runtime libraries successfully found.")
-    target_link_libraries(${PROJECT_NAME} ${PLUGIN_LIBS} Threads::Threads openvino::runtime)
+    target_link_libraries(${PROJECT_NAME} ${PLUGIN_LIBS})
     target_include_directories(${PROJECT_NAME}
             PRIVATE
             ${OnnxRuntime_DIR}/include
