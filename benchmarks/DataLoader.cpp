@@ -3,8 +3,12 @@
 #include <filesystem>
 
 
-cv::Mat preprocessImage(const cv::Mat& image, const int width, const int height)
+cv::Mat sample::preprocessImage(const cv::Mat& image, const int width, const int height)
 {
+    if (width <= 0 || height <= 0)
+    {
+        throw ImageFormatException("Invalid image dimensions.");
+    }
     // 1. Resize the image to the target dimensions
     cv::Mat resizedImage;
     resize(image, resizedImage, cv::Size(width, height));
@@ -52,8 +56,7 @@ std::vector<float> imageToVector(const cv::Mat& image)
     return data;
 }
 
-std::vector<float> sample::loadToVector(const cv::Mat& image, const int width, const int height)
+std::vector<float> sample::loadToVector(const cv::Mat& image)
 {
-    const auto preprocessedImage = preprocessImage(image, width, height);
-    return imageToVector(preprocessedImage);
+    return imageToVector(image);
 }

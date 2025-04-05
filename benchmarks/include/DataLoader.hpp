@@ -15,5 +15,7 @@ namespace sample
         }
     };
 
-    std::vector<float> loadToVector(const cv::Mat& image, int width, int height);
+    std::vector<float> loadToVector(const cv::Mat& image);
+
+    cv::Mat preprocessImage(const cv::Mat& image, int width, int height);
 }

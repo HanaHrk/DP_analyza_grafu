@@ -10,7 +10,7 @@
 
 class EngineFactory
 {
-    using EnginePtr = std::unique_ptr<InferenceEngine>;
+    using EnginePtr = std::unique_ptr<InferenceEngineSequential>;
 
     using EngineBuilder = std::function<EnginePtr()>;
 

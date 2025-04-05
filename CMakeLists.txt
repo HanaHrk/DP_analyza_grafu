@@ -18,6 +18,10 @@ set(InferenceBenchmark_SOURCES
         benchmarks/main.cpp
         benchmarks/DataLoader.cpp
         "benchmarks/include/ImageFormatException.h"
+        benchmarks/SegmentationUtils.cpp
+        benchmarks/include/SegmentationUtils.hpp
+        benchmarks/ClassificationUtils.cpp
+        benchmarks/include/ClassificationUtils.hpp
 )
 set(InferenceBenchmark_INCLUDES
         ${CMAKE_SOURCE_DIR}/benchmarks/include

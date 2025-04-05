@@ -1,0 +1,2 @@
+#include <inferencetools/FrugallyDeepEngineParallel.hpp>
+

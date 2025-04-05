@@ -1,5 +1,6 @@
 #include <inferencetools/EngineFactory.hpp>
 #include <inferencetools/EngineNotFound.hpp>
+#include <inferencetools/FrugallyDeepEngineSequential.hpp>
 
 std::map<std::string, EngineFactory::EngineBuilder> EngineFactory::engineMaps_;
 
@@ -31,6 +32,6 @@ void EngineFactory::registerEngine(const std::string& engineName, const EngineBu
 void EngineFactory::registerAllEngines()
 {
 #if USE_FRUGALLY_DEEP
-    registerEngine("FrugallyDeep", [] { return std::make_unique<FrugallyDeepEngine>(); });
+    registerEngine("FrugallyDeep", [] { return std::make_unique<FrugallyDeepEngineSequential>(); });
 #endif
 }

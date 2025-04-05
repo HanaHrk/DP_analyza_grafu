@@ -7,6 +7,8 @@ find_package(frugally_deep_deps HINTS ${CMAKE_SOURCE_DIR}/third_party/frugally_d
 
 # Create engine library
 add_library(frugally_deep_engine STATIC
+        ${CMAKE_CURRENT_LIST_DIR}/FrugallyDeepEngineSequential.cpp
+        #${CMAKE_CURRENT_LIST_DIR}/FrugallyDeepEngineParallel.cpp
         ${CMAKE_CURRENT_LIST_DIR}/FrugallyDeepEngine.cpp
 )
 target_include_directories(frugally_deep_engine PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
