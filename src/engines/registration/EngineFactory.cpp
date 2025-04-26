@@ -1,6 +1,13 @@
 #include <inferencetools/EngineFactory.hpp>
 #include <inferencetools/EngineNotFound.hpp>
+
+#if USE_FRUGALLY_DEEP
 #include <inferencetools/FrugallyDeepEngineSequential.hpp>
+#elif USE_TENSORRT
+#include <inferencetools/TensorRTEngineSequential.hpp>
+#elif USE_LIBTORCH
+#include "inferencetools/LibTorchEngineSequential.hpp"
+#endif
 
 std::map<std::string, EngineFactory::EngineBuilder> EngineFactory::engineMaps_;
 
@@ -33,5 +40,13 @@ void EngineFactory::registerAllEngines()
 {
 #if USE_FRUGALLY_DEEP
     registerEngine("FrugallyDeep", [] { return std::make_unique<FrugallyDeepEngineSequential>(); });
+#endif
+
+#if USE_TENSORRT
+    registerEngine("TensorRT", [] { return std::make_unique<TensorRTEngineSequential>(); });
+#endif
+
+#if USE_LIBTORCH
+    registerEngine("LibTorch", [] { return std::make_unique<LibtorchEngineSequential>(); });
 #endif
 }

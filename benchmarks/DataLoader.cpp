@@ -3,7 +3,7 @@
 #include <filesystem>
 
 
-cv::Mat sample::preprocessImage(const cv::Mat& image, const int width, const int height)
+cv::Mat sample::preprocessImage(const cv::Mat& image, const int width, const int height, bool normalize)
 {
     if (width <= 0 || height <= 0)
     {
@@ -15,7 +15,14 @@ cv::Mat sample::preprocessImage(const cv::Mat& image, const int width, const int
 
     // 2. Convert to float32 and normalize
     cv::Mat floatImage;
-    resizedImage.convertTo(floatImage, CV_32F, 1.0);
+    if (normalize)
+    {
+        resizedImage.convertTo(floatImage, CV_32F, 1.0 / 255.0);
+    }
+    else
+    {
+        resizedImage.convertTo(floatImage, CV_32F, 1.0);
+    }
 
     // 3. Subtract mean and divide by std deviation
     cv::Mat mean = (cv::Mat_<float>(1, 3) << 0.485, 0.456, 0.406);
@@ -35,7 +42,7 @@ cv::Mat sample::preprocessImage(const cv::Mat& image, const int width, const int
     return preprocessedImage;
 }
 
-std::vector<float> imageToVector(const cv::Mat& image)
+std::vector<float> imageToVector(const cv::Mat& image, bool useBGR)
 {
     std::vector<float> data;
     data.reserve(224 * 224 * 3); // Reserve space for 224x224x3 elements
@@ -46,17 +53,27 @@ std::vector<float> imageToVector(const cv::Mat& image)
         for (int x = 0; x < image.cols; ++x)
         {
             const auto& pixel = image.at<cv::Vec3f>(y, x);
-            // BGR -> RGB
-            data.push_back(pixel[2]); // R channel
-            data.push_back(pixel[1]); // G channel
-            data.push_back(pixel[0]); // B channel
+            if (useBGR)
+            {
+                // BGR -> RGB
+                data.push_back(pixel[2]); // R channel
+                data.push_back(pixel[1]); // G channel
+                data.push_back(pixel[0]); // B channel
+            }
+            else
+            {
+                // RGB -> RGB
+                data.push_back(pixel[0]); // R channel
+                data.push_back(pixel[1]); // G channel
+                data.push_back(pixel[2]); // B channel
+            }
         }
     }
 
     return data;
 }
 
-std::vector<float> sample::loadToVector(const cv::Mat& image)
+std::vector<float> sample::loadToVector(const cv::Mat& image, bool useBGR)
 {
-    return imageToVector(image);
+    return imageToVector(image, useBGR);
 }

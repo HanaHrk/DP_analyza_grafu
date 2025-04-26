@@ -5,12 +5,12 @@
 class FrugallyDeepEngine
 {
 protected:
-    [[nodiscard]] ImageSize _getSize(const cv::Mat& def) const;
+    void _loadModel(const std::string& enginePath);
 
-    void _loadModel(const EngineInfo& engineInfo);
-
-    [[nodiscard]] fdeep::tensor _toFdeepTensor(const Tensor& tensor, const cv::Mat &def) const;
+    [[nodiscard]] fdeep::tensor _toFdeepTensor(const InferInput& input) const;
 
     std::unique_ptr<fdeep::model> model_;
-    std::unique_ptr<EngineInfo> engine_info_;
+
+private:
+    ImageShape _modelInputShape() const;
 };

@@ -8,84 +8,54 @@
 
 using Tensor = std::vector<float>;
 
-enum class InferenceType : int
-{
-    CLASSIFICATION,
-    SEGMENTATION,
-    UNKNOWN,
-};
+constexpr std::size_t MODEL_PROPERTIES = 0;
+constexpr std::size_t UNKNOWN_PROPERTY = 0;
 
-typedef struct EngineInfo
+typedef struct ImageSize
 {
-    const std::string path;
-    const InferenceType type;
+    const std::size_t width;
+    const std::size_t height;
+    const std::size_t depth;
 
-    EngineInfo(std::string modelPath, const InferenceType type)
-        : path(std::move(modelPath)), type(type)
+    ImageSize(const std::size_t width, const std::size_t height, const std::size_t depth) : width(width),
+        height(height), depth(depth)
     {
     }
-} EngineInfo;
+} ImageShape;
 
-class ImageSize
+typedef struct InferInput
 {
-public:
-    const int width;
-    const int height;
-    const int depth;
+    const Tensor input;
+    const std::size_t inputWidth;
+    const std::size_t inputHeight;
+    const std::size_t inputDepth;
+    const std::size_t outputSize;
 
-    ImageSize(const int width, const int height, const int depth)
-        : width(width), height(height), depth(depth)
+    InferInput(Tensor input, const std::size_t inputWidth, const std::size_t inputHeight,
+               const std::size_t inputDepth, const std::size_t outputSize) : input(std::move(input)),
+                                                                             inputWidth(inputWidth),
+                                                                             inputHeight(inputHeight),
+                                                                             inputDepth(inputDepth),
+                                                                             outputSize(outputSize)
     {
     }
-};
 
-struct SizedImage
-{
-    const Tensor& image;
-    const ImageSize& size;
+    explicit InferInput(Tensor input) : input(std::move(input)),
+                                        inputWidth(MODEL_PROPERTIES),
+                                        inputHeight(MODEL_PROPERTIES),
+                                        inputDepth(MODEL_PROPERTIES),
+                                        outputSize(MODEL_PROPERTIES)
 
-    SizedImage(const Tensor& image, const ImageSize& size)
-        : image(image), size(size)
     {
     }
-};
-
+} InferInput;
 
 class InferenceEngineSequential
 {
 public:
     virtual ~InferenceEngineSequential() = default;
 
-    virtual void loadModel(const EngineInfo& engineInfo) = 0;
+    virtual void loadModel(const std::string& enginePath) = 0;
 
-    virtual std::unique_ptr<Tensor> predict(const cv::Mat& predictionItem,
-                                            const std::function<Tensor(cv::Mat)>& transformer) const = 0;
-
-    [[nodiscard]] virtual ImageSize getSize(const cv::Mat& def) const = 0;
-
-    virtual InferenceType getType() const = 0;
-
-protected:
-    static int getClass(const Tensor& tensor)
-    {
-        return static_cast<int>(std::max_element(tensor.begin(), tensor.end()) - tensor.begin());
-    }
-};
-
-class InferenceEngineParallel
-{
-public:
-    virtual ~InferenceEngineParallel() = default;
-
-    virtual void loadModel(const EngineInfo& modelPath) = 0;
-
-    virtual std::vector<std::unique_ptr<Tensor>> predictAll(const std::vector<SizedImage>& images) = 0;
-
-    [[nodiscard]] virtual ImageSize getSize() const = 0;
-
-protected:
-    static int getClass(const Tensor& tensor)
-    {
-        return static_cast<int>(std::max_element(tensor.begin(), tensor.end()) - tensor.begin());
-    }
+    [[nodiscard]] virtual Tensor predict(const InferInput& input) const = 0;
 };

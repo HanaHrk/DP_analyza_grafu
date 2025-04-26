@@ -3,10 +3,6 @@
 #include <string>
 #include <inferencetools/InferenceEngine.hpp>
 
-#if USE_FRUGALLY_DEEP
-#include <inferencetools/FrugallyDeepEngine.hpp>
-#endif
-
 
 class EngineFactory
 {

@@ -1,37 +1,49 @@
 #include <inferencetools/FrugallyDeepEngine.hpp>
 
-#include "../../../benchmarks/include/ImageFormatException.h"
+#include <inferencetools/exception/EngineRuntimeException.hpp>
 
-ImageSize FrugallyDeepEngine::_getSize(const cv::Mat& def) const
-{
-    const auto input_shapes = this->model_->get_input_shapes();
-    const auto& input_shape = input_shapes.at(0);
-    const auto height = input_shape.height_.get_with_default(0);
-    const auto width = input_shape.width_.get_with_default(0);
-    const auto depth = input_shape.depth_.get_with_default(0);
-    if (height == 0 || width == 0 || depth == 0)
-    {
-        if (def.cols == 0 || def.rows == 0 || def.channels() == 0)
-        {
-            throw ImageFormatException("Could not determine image size.");
-        }
-        return ImageSize{def.cols, def.rows, def.channels()};
-    }
-    return ImageSize{static_cast<int>(width), static_cast<int>(height), static_cast<int>(depth)};
-}
 
-void FrugallyDeepEngine::_loadModel(const EngineInfo& engineInfo)
+void FrugallyDeepEngine::_loadModel(const std::string& enginePath)
 {
-    const auto model = fdeep::load_model(engineInfo.path);
+    const auto model = fdeep::load_model(enginePath);
     this->model_ = std::make_unique<fdeep::model>(model);
-    this->engine_info_ = std::make_unique<EngineInfo>(engineInfo);
+}
+
+ImageShape FrugallyDeepEngine::_modelInputShape() const
+{
+    const auto inputShapes = this->model_->get_input_shapes();
+    const auto& inputShape = inputShapes.at(0);
+    const auto height = inputShape.height_.get_with_default(0);
+    const auto width = inputShape.width_.get_with_default(0);
+    const auto depth = inputShape.depth_.get_with_default(0);
+    return ImageShape{height, width, depth};
 }
 
 
-fdeep::tensor FrugallyDeepEngine::_toFdeepTensor(const Tensor& tensor, const cv::Mat& def) const
+fdeep::tensor FrugallyDeepEngine::_toFdeepTensor(const InferInput& input) const
 {
-    const auto imageSize = this->_getSize(def);
-    const auto shape = fdeep::tensor_shape(imageSize.height, imageSize.width, imageSize.depth);
-    const auto fdeepTensor = fdeep::tensor{shape, tensor};
-    return fdeep::tensor{shape, tensor};
+    auto inputWidth = input.inputWidth;
+    auto inputHeight = input.inputHeight;
+    auto inputDepth = input.inputDepth;
+    const auto modelSize = this->_modelInputShape();
+
+    if (inputWidth == MODEL_PROPERTIES)
+    {
+        inputWidth = modelSize.width;
+    }
+    if (inputHeight == MODEL_PROPERTIES)
+    {
+        inputHeight = modelSize.height;
+    }
+    if (inputDepth == MODEL_PROPERTIES)
+    {
+        inputDepth = modelSize.depth;
+    }
+    if (inputWidth == UNKNOWN_PROPERTY || inputHeight == UNKNOWN_PROPERTY || inputDepth == UNKNOWN_PROPERTY)
+    {
+        throw EngineRuntimeException(
+            "Input Shape is not defined properly. Model or user must define input shape for inference.");
+    }
+    const auto shape = fdeep::tensor_shape(inputHeight, inputHeight, inputDepth);
+    return fdeep::tensor{shape, input.input};
 }

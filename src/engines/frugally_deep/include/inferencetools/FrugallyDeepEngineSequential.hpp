@@ -7,12 +7,8 @@ class FrugallyDeepEngineSequential final : protected FrugallyDeepEngine, public 
 public:
     FrugallyDeepEngineSequential() = default;
 
-    std::unique_ptr<Tensor> predict(const cv::Mat& predictionItem,
-                                    const std::function<Tensor(cv::Mat)>& transformer) const override;
+    void loadModel(const std::string& enginePath) override;
 
-    [[nodiscard]] ImageSize getSize(const cv::Mat& def) const override;
+    Tensor predict(const InferInput& input) const override;
 
-    void loadModel(const EngineInfo& engineInfo) override;
-
-    [[nodiscard]] InferenceType getType() const override;
 };

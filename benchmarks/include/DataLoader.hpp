@@ -15,7 +15,7 @@ namespace sample
         }
     };
 
-    std::vector<float> loadToVector(const cv::Mat& image);
+    std::vector<float> loadToVector(const cv::Mat& image, bool useBGR);
 
-    cv::Mat preprocessImage(const cv::Mat& image, int width, int height);
+    cv::Mat preprocessImage(const cv::Mat& image, int width, int height, bool normalize);
 }

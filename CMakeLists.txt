@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.30.5)
-project(InferenceBenchmark)
-
+project(InferenceBenchmark LANGUAGES CXX CUDA)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Options to enable/disable libraries
-option(USE_FRUGALLY_DEEP "Enable Frugally-Deep" ON)
-option(USE_TENSORRT "Enable TensorRT" ON)
-option(USE_ONNXRUNTIME "Enable OnnxRuntime" ON)
+option(USE_FRUGALLY_DEEP "Enable Frugally-Deep" OFF)
+option(USE_TENSORRT "Enable TensorRT" OFF)
+option(USE_LIBTORCH "Enable LibTorch" OFF)
+option(USE_ONNXRUNTIME "Enable OnnxRuntime" OFF)
 
 # Option to build samples benchmarks
 option(RUN_SAMPLE "Enable sample benchmark of enabled libraries" ON)
@@ -17,7 +17,7 @@ set(SAMPLE_APPLICATION InferenceBenchmark)
 set(InferenceBenchmark_SOURCES
         benchmarks/main.cpp
         benchmarks/DataLoader.cpp
-        "benchmarks/include/ImageFormatException.h"
+        benchmarks/include/ImageFormatException.h
         benchmarks/SegmentationUtils.cpp
         benchmarks/include/SegmentationUtils.hpp
         benchmarks/ClassificationUtils.cpp
