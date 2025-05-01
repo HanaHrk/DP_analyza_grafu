@@ -7,7 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(USE_FRUGALLY_DEEP "Enable Frugally-Deep" OFF)
 option(USE_TENSORRT "Enable TensorRT" OFF)
 option(USE_LIBTORCH "Enable LibTorch" OFF)
-option(USE_ONNXRUNTIME "Enable OnnxRuntime" OFF)
 
 # Option to build samples benchmarks
 option(RUN_SAMPLE "Enable sample benchmark of enabled libraries" ON)

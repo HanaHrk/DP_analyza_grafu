@@ -23,6 +23,8 @@ typedef struct ImageSize
     }
 } ImageShape;
 
+typedef std::vector<int64_t> TensorShape;
+
 typedef struct InferInput
 {
     const Tensor input;

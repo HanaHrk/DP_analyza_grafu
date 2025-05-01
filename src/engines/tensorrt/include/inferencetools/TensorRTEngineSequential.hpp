@@ -1,57 +1,51 @@
 #pragma once
 
 #include <inferencetools/InferenceEngine.hpp>
-#include <NvInfer.h>
-#include <NvOnnxParser.h>
+#include <onnxruntime_cxx_api.h>
 
-class TensorRTLogger final : public nvinfer1::ILogger
+struct MemoryDeleter
 {
-public:
-    explicit TensorRTLogger(const Severity& severity = Severity::kINFO)
+    explicit MemoryDeleter(Ort::Allocator* alloc)
     {
-        this->severity_ = severity;
+        alloc_ = alloc;
     }
 
-    void log(Severity severity, const char* msg) noexcept override
+    void operator()(void* ptr) const
     {
-        if (static_cast<int32_t>(severity) <= static_cast<int32_t>(this->severity_))
-        {
-            const std::vector<std::string> ERRORS = {
-                "FATAL   ",
-                "ERROR   ",
-                "WARNING ",
-                "INFO    ",
-                "DEBUG   ",
-            };
-            std::cout << ERRORS[static_cast<int32_t>(severity)] << " : " << msg << std::endl;
-        }
+        this->alloc_->Free(ptr);
     }
 
-private:
-    Severity severity_;
+    Ort::Allocator* alloc_;
 };
 
 class TensorRTEngineSequential final : public InferenceEngineSequential
 {
 public:
-    ~TensorRTEngineSequential() override;
+    ~TensorRTEngineSequential() override = default;
 
     void loadModel(const std::string& modelPath) override;
 
     [[nodiscard]] Tensor predict(const InferInput& input) const override;
 
 private:
-    std::unique_ptr<TensorRTLogger> logger_;
-    std::unique_ptr<nvinfer1::ICudaEngine> engine_;
-    std::unique_ptr<nvinfer1::IExecutionContext> context_;
+    std::unique_ptr<Ort::Env> env_{};
+    std::unique_ptr<Ort::Session> session_{};
+    Ort::MemoryInfo memoryInfo_{nullptr};
+    std::unique_ptr<Ort::Allocator> allocator_;
 
-    [[nodiscard]] long getInputTensorSize(const InferInput& input) const;
+    [[nodiscard]] TensorShape getInputTensorShape(const InferInput& input) const;
 
-    [[nodiscard]] long getOutputSize(const InferInput& input) const;
+    [[nodiscard]] TensorShape getOutputTensorShape(const InferInput& input) const;
 
     [[nodiscard]] std::string getInputTensorName() const;
 
     [[nodiscard]] std::string getOutputTensorName() const;
 
-    static nvinfer1::ICudaEngine* buildTensorRTEngine(const std::string& enginePath, nvinfer1::ILogger& logger);
+    static uint64_t getTensorSize(const TensorShape& tensorShape);
+
+    static Ort::SessionOptions createSessionOptions();
+
+    static Ort::MemoryInfo createMemoryInfo();
+
+    static Ort::ThreadingOptions createThreadingOptions();
 };

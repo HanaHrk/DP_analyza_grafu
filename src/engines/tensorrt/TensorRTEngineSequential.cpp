@@ -1,171 +1,117 @@
+#include <locale>
+#include <string>
+#include <codecvt>
+#include <numeric>
 #include <inferencetools/TensorRTEngineSequential.hpp>
-#include <inferencetools/exception/TensorRTBuildException.hpp>
 #include <inferencetools/exception/TensorRTRuntimeException.hpp>
 
 constexpr int INPUT_BUFFER = 0;
 constexpr int OUTPUT_BUFFER = 1;
 
-void HANDLE_ERROR(const cudaError_t& e, TensorRTLogger& logger)
+std::wstring toWString(const std::string& s)
 {
-    if (e != cudaSuccess)
-    {
-        const auto message = "Cuda error: " + std::string(cudaGetErrorString(e));
-        logger.log(nvinfer1::ILogger::Severity::kERROR, message.c_str());
-        throw TensorRTRuntimeException(message);
-    }
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    return converter.from_bytes(s);
 }
 
-nvinfer1::ICudaEngine* TensorRTEngineSequential::buildTensorRTEngine(const std::string& enginePath,
-                                                                     nvinfer1::ILogger& logger)
-{
-    const auto builder = std::unique_ptr<nvinfer1::IBuilder>(nvinfer1::createInferBuilder(logger));
-    constexpr auto explicitBatch = 1U << 0;
-    const auto network = std::unique_ptr<nvinfer1::INetworkDefinition>(builder->createNetworkV2(explicitBatch));
 
-    const auto parser = std::unique_ptr<nvonnxparser::IParser>(nvonnxparser::createParser(*network, logger));
-    if (!parser->parseFromFile(enginePath.c_str(), static_cast<int>(nvinfer1::ILogger::Severity::kWARNING)))
-    {
-        throw TensorRTBuildException("Failed to parse TensorRT model (engine).");
-    }
-    const auto config = std::unique_ptr<nvinfer1::IBuilderConfig>(builder->createBuilderConfig());
-    config->setMemoryPoolLimit(nvinfer1::MemoryPoolType::kWORKSPACE, 1 << 30); // 1GB WORKSPACE
-    const auto engine = builder->buildEngineWithConfig(*network, *config);
-    if (engine == nullptr)
-    {
-        throw TensorRTBuildException("Failed to build TensorRT engine using network.");
-    }
-    return engine;
+Ort::SessionOptions TensorRTEngineSequential::createSessionOptions()
+{
+    Ort::SessionOptions sessionOptions;
+    const auto tensorStatus = OrtSessionOptionsAppendExecutionProvider_Tensorrt(sessionOptions, 0);
+    const auto cudaStatus = OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0);
+
+    std::cout << OrtGetApiBase()->GetApi(ORT_API_VERSION)->GetErrorMessage(tensorStatus) << ", " << OrtGetApiBase()->GetApi(ORT_API_VERSION)->GetErrorMessage(cudaStatus) << std::endl;
+    return sessionOptions;
 }
 
-std::string TensorRTEngineSequential::getInputTensorName() const
+Ort::MemoryInfo TensorRTEngineSequential::createMemoryInfo()
 {
-    return this->context_->getEngine().getIOTensorName(0);
+    return {"TensorRT", OrtArenaAllocator, 0, OrtMemTypeDefault};
 }
 
-std::string TensorRTEngineSequential::getOutputTensorName() const
+Ort::ThreadingOptions TensorRTEngineSequential::createThreadingOptions()
 {
-    const auto tensors = this->context_->getEngine().getNbIOTensors();
-    return this->context_->getEngine().getIOTensorName(tensors - 1);
+    Ort::ThreadingOptions threadOptions;
+    threadOptions.SetGlobalIntraOpNumThreads(1);
+    return threadOptions;
 }
-
-TensorRTEngineSequential::~TensorRTEngineSequential() = default;
-
 
 void TensorRTEngineSequential::loadModel(const std::string& modelPath)
 {
-    constexpr auto LEVEL = nvinfer1::ILogger::Severity::kERROR;
-    this->logger_ = std::make_unique<TensorRTLogger>(LEVEL);
-    this->engine_ = std::unique_ptr<nvinfer1::ICudaEngine>(buildTensorRTEngine(modelPath, *this->logger_));
-    this->context_ = std::unique_ptr<nvinfer1::IExecutionContext>(this->engine_->createExecutionContext());
-}
-
-long TensorRTEngineSequential::getInputTensorSize(const InferInput& input) const
-{
-    // Common cases:
-    // NCHW: dims = [N, C, H, W] → width is last dim
-    // NHWC: dims = [N, H, W, C] → width is second to last
-    // CHW: dims = [C, H, W] → width is last dim
-    // HW: dims = [H, W] → width is last dim
-
-    // Try to extract size from model
-    constexpr int THREE_CHANNELS = 3;
-    constexpr int ONE_CHANNEL = 1;
-    std::size_t modelWidth = 0L;
-    std::size_t modelHeight = 0L;
-    std::size_t modelDepth = 0L;
-    if (input.inputDepth != MODEL_PROPERTIES
-        && input.inputHeight != MODEL_PROPERTIES
-        && input.inputWidth != MODEL_PROPERTIES
-    )
-    {
-        const auto [nbDims, d] = engine_->getTensorShape(getInputTensorName().c_str());
-        if (nbDims >= 2)
-        {
-            // For models with explicit batch dimension (N)
-            if (nbDims == 4)
-            {
-                // Likely NCHW or NHWC
-                if (d[1] == THREE_CHANNELS || d[1] == ONE_CHANNEL)
-                {
-                    // NCHW format: [N, C, H, W]
-                    modelDepth = d[1];
-                    modelHeight = d[2];
-                    modelWidth = d[3];
-                }
-                else
-                {
-                    // NHWC format: [N, H, W, C]
-                    modelHeight = d[1];
-                    modelWidth = d[2];
-                }
-            }
-            else if (nbDims == 3)
-            {
-                // Likely CHW format
-                modelHeight = d[1];
-                modelWidth = d[2];
-            }
-            else if (nbDims == 2)
-            {
-                // HW format
-                modelHeight = d[0];
-                modelWidth = d[1];
-            }
-        }
-    }
-    const std::size_t width = input.inputWidth == MODEL_PROPERTIES ? modelWidth : input.inputWidth;
-    const std::size_t height = input.inputHeight == MODEL_PROPERTIES ? modelHeight : input.inputHeight;
-    const std::size_t depth = input.inputDepth == MODEL_PROPERTIES ? modelDepth : input.inputDepth;
-    if (width == UNKNOWN_PROPERTY || height == UNKNOWN_PROPERTY || depth == UNKNOWN_PROPERTY)
-    {
-        throw TensorRTRuntimeException(
-            "Input Shape is not defined properly. Model or user must define input shape for inference.");
-    }
-
-
-    return static_cast<long>(width * height * depth);
-}
-
-[[nodiscard]] long TensorRTEngineSequential::getOutputSize(const InferInput& input) const
-{
-    if (input.outputSize == MODEL_PROPERTIES)
-    {
-        const auto [nbDims, d] = engine_->getTensorShape(getOutputTensorName().c_str());
-        long outputSize = 1;
-        for (int i = 0; i < nbDims; ++i)
-        {
-            if (d[i] != 0)
-            {
-                outputSize *= static_cast<long>(d[i]);
-            }
-        }
-        return outputSize;
-    }
-    return static_cast<long>(input.outputSize);
+    const auto sessionOptions = createSessionOptions();
+    const auto threadOptions = createThreadingOptions();
+    this->env_ = std::make_unique<Ort::Env>(threadOptions, ORT_LOGGING_LEVEL_INFO, "OnnxRuntimeTensorRTEngine");
+    this->memoryInfo_ = createMemoryInfo();
+    this->session_ = std::make_unique<Ort::Session>(*this->env_, toWString(modelPath).c_str(), sessionOptions);
 }
 
 Tensor TensorRTEngineSequential::predict(const InferInput& input) const
 {
-    Tensor prediction;
-    std::array<void*, 2> buffers{};
+    Tensor outTensor;
+    const auto inputShape = getInputTensorShape(input);
+    const auto outputShape = getOutputTensorShape(input);
+    const auto inputSize = getTensorSize(inputShape);
+    const auto outputSize = getTensorSize(outputShape);
 
-    const auto inputSize = getInputTensorSize(input);
-    const auto outputSize = getOutputSize(input);
-    prediction.resize(inputSize);
+    const auto inputTensorName = getInputTensorName();
+    const auto outputTensorName = getOutputTensorName();
+    const auto inputTensorNamePtr = inputTensorName.c_str();
+    const auto outputTensorNamePtr = outputTensorName.c_str();
 
-    HANDLE_ERROR(cudaMalloc(&buffers[INPUT_BUFFER], inputSize * sizeof(float)),
-                 *this->logger_);
-    HANDLE_ERROR(cudaMalloc(&buffers[OUTPUT_BUFFER], outputSize * sizeof(float)),
-                 *this->logger_);
-    HANDLE_ERROR(cudaMemcpy(buffers[INPUT_BUFFER], input.input.data(), inputSize * sizeof(float),
-                            cudaMemcpyHostToDevice),
-                 *this->logger_);
-    if (!this->context_->executeV2(buffers.data()))
+    outTensor.resize(outputSize);
+    const auto inputTensor = Ort::Value::CreateTensor<float>(this->memoryInfo_, const_cast<float*>(input.input.data()), inputSize, inputShape.data(), inputShape.size());
+    auto outputTensor = Ort::Value::CreateTensor<float>(this->memoryInfo_, outTensor.data(), outputSize, outputShape.data(), outputShape.size());
+
+    const Ort::RunOptions run_options;
+    session_->Run(run_options, &inputTensorNamePtr, &inputTensor, 1, &outputTensorNamePtr, &outputTensor, 1);
+
+    return outTensor;
+}
+
+uint64_t TensorRTEngineSequential::getTensorSize(const TensorShape& tensorShape)
+{
+    return std::accumulate(tensorShape.begin(), tensorShape.end(), 1, std::multiplies<>());
+}
+
+TensorShape TensorRTEngineSequential::getInputTensorShape(const InferInput& input) const
+{
+    if (input.inputDepth == MODEL_PROPERTIES || input.inputWidth == MODEL_PROPERTIES || input.inputHeight == MODEL_PROPERTIES)
     {
-        throw TensorRTRuntimeException("Error executing TensorRT inference.");
+        const auto outputShape = this->session_->GetInputTypeInfo(0).GetTensorTypeAndShapeInfo().GetShape();
+        if (outputShape.empty())
+        {
+            throw TensorRTRuntimeException("Output Shape is not defined properly. Model or user must define input shape for inference.");
+        }
+        return outputShape;
     }
-    HANDLE_ERROR(cudaMemcpy(prediction.data(), buffers[OUTPUT_BUFFER], outputSize * sizeof(float),
-                            cudaMemcpyDeviceToHost),
-                 *this->logger_);
-    return prediction;
+    return TensorShape{1, static_cast<int64_t>(input.inputWidth), static_cast<int64_t>(input.inputHeight), static_cast<int64_t>(input.inputDepth)};
+}
+
+TensorShape TensorRTEngineSequential::getOutputTensorShape(const InferInput& input) const
+{
+    if (input.outputSize == MODEL_PROPERTIES)
+    {
+        const auto outputShape = this->session_->GetOutputTypeInfo(0).GetTensorTypeAndShapeInfo().GetShape();
+        if (outputShape.empty())
+        {
+            throw TensorRTRuntimeException("Output Shape is not defined properly. Model or user must define input shape for inference.");
+        }
+        return outputShape;
+    }
+    return TensorShape{1, static_cast<int64_t>(input.outputSize)};
+}
+
+std::string TensorRTEngineSequential::getInputTensorName() const
+{
+    const Ort::AllocatorWithDefaultOptions allocator;
+    const auto inputNamePtr = this->session_->GetInputNameAllocated(0, allocator);
+    return inputNamePtr.get();
+}
+
+std::string TensorRTEngineSequential::getOutputTensorName() const
+{
+    const Ort::AllocatorWithDefaultOptions allocator;
+    const auto outputNamePrt = this->session_->GetOutputNameAllocated(0, allocator);
+    return outputNamePrt.get();
 }

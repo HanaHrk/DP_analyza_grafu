@@ -18,4 +18,4 @@ set(OpenCV_HINTS
 find_package(OpenCV HINTS ${OpenCV_HINTS} REQUIRED)
 target_link_libraries(opencv_deps INTERFACE ${OpenCV_LIBS})
 
-message("--- Frugally Deep Searching End ---")
+message("--- OpenCV Deep Searching End ---")
