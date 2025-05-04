@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 message("--- Engine Registrator Start ---")
 
 # Create engine library
-add_library(engine_registrator STATIC
+add_library(EngineRegistrator SHARED
         ${CMAKE_CURRENT_LIST_DIR}/EngineFactory.cpp
 )
 
@@ -20,9 +20,9 @@ endif ()
 
 if (USE_TENSORRT)
     # Add tensor_rt engine
-    find_package(tensorrt_engine HINTS ${CMAKE_SOURCE_DIR}/src/engines/tensorrt REQUIRED)
+    find_package(TensorRTInferenceEngine HINTS ${CMAKE_SOURCE_DIR}/src/engines/tensorrt REQUIRED)
     list(APPEND COMPILE_OPTIONS -DUSE_TENSORRT=1)
-    list(APPEND ENGINE_LIBRARIES tensorrt_engine)
+    list(APPEND ENGINE_LIBRARIES TensorRTInferenceEngine)
 endif ()
 
 if(USE_LIBTORCH)
@@ -32,8 +32,8 @@ if(USE_LIBTORCH)
     list(APPEND ENGINE_LIBRARIES libtorch_engine)
 endif ()
 
-target_compile_definitions(engine_registrator PUBLIC ${COMPILE_OPTIONS})
-target_include_directories(engine_registrator PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
-target_link_libraries(engine_registrator PUBLIC opencv_deps ${ENGINE_LIBRARIES} abstract_engine)
+target_compile_definitions(EngineRegistrator PUBLIC ${COMPILE_OPTIONS})
+target_include_directories(EngineRegistrator PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
+target_link_libraries(EngineRegistrator PUBLIC opencv_deps ${ENGINE_LIBRARIES} abstract_engine)
 
 message("--- Engine Registrator End ---")

@@ -43,7 +43,7 @@ const std::vector<std::string> JSON_MODELS = {
 };
 
 const std::vector<std::string> ONNX_MODELS = {
-    R"(C:/~Lokalni data/School/DP/DP_analyza_grafu/models/segmentation.onnx)",
+    R"(C:/Code/DP/C++/DP_analyza_grafu/models/segmenation.onnx)",
     R"(C:/~Lokalni data/School/DP/DP_analyza_grafu/models/classification.onnx)"
 };
 
@@ -184,6 +184,6 @@ int main(const int argv, char** argc)
     const auto rootFolderPath = std::string(argc[1]);
 
     EngineFactory::registerAllEngines();
-    doClassification(rootFolderPath);
     doSegmentation(rootFolderPath);
+    // doClassification(rootFolderPath);
 }

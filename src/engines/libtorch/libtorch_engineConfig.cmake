@@ -4,7 +4,7 @@ message("--- LibTorch Engine Start ---")
 # Add LibTorch dependencies
 find_package(libtorch_deps HINTS ${CMAKE_SOURCE_DIR}/third_party/libtorch REQUIRED)
 
-add_library(libtorch_engine STATIC
+add_library(libtorch_engine SHARED
         ${CMAKE_CURRENT_LIST_DIR}/LibTorchEngineSequential.cpp
 )
 

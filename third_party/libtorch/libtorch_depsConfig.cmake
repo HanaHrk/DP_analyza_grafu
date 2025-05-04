@@ -8,11 +8,15 @@ endif ()
 find_package(Torch REQUIRED HINTS ${LibTorch_HOME})
 
 if(MSVC)
-    FILE(GLOB TORCH_LIBRARIES "${LibTorch_HOME}/lib/*.lib")
+    FILE(GLOB LibTorch_LIBRARIES "${LibTorch_HOME}/lib/*.lib")
 endif ()
 
-add_library(libtorch_deps INTERFACE)
-target_link_libraries(libtorch_deps INTERFACE "${TORCH_LIBRARIES}")
-target_include_directories(libtorch_deps INTERFACE ${TORCH_INCLUDE_DIRS})
+if (NOT DEFINED LibTorch_INCLUDES)
+    set(LibTorch_INCLUDES ${TORCH_INCLUDE_DIRS})
+endif ()
+
+add_library(LibTorch INTERFACE)
+target_link_libraries(LibTorch INTERFACE "${LibTorch_LIBRARIES}")
+target_include_directories(LibTorch INTERFACE ${LibTorch_INCLUDES})
 
 message("--- LibTorch Searching Start ---")
