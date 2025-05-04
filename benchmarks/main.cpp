@@ -6,6 +6,13 @@
 #include "SegmentationUtils.hpp"
 #include "DataLoader.hpp"
 
+#define HANDLE_LOAD(call)                   \
+    try {                                   \
+        call;                               \
+    } catch (const std::exception & e) {    \
+        std::cerr << e.what() << std::endl; \
+    }
+
 const std::vector<std::string> IMAGE_PATHS = {
     "C:/data/graphs/area/PMC1464820___pgen.0020068.g002.jpg",
     "C:/data/graphs/area/PMC7219504___20.jpg",
@@ -43,12 +50,12 @@ const std::vector<std::string> JSON_MODELS = {
 };
 
 const std::vector<std::string> ONNX_MODELS = {
-    R"(C:/Code/DP/C++/DP_analyza_grafu/models/segmenation.onnx)",
+    R"(C:/~Lokalni data/School/DP/DP_analyza_grafu/models/segmenation.onnx)",
     R"(C:/~Lokalni data/School/DP/DP_analyza_grafu/models/classification.onnx)"
 };
 
 const std::vector<std::string> PYTORCH_MODELS = {
-    R"(C:/~Lokalni data/School/DP/DP_analyza_grafu/models/segmentation.tar)",
+    R"(C:/~Lokalni data/School/DP/DP_analyza_grafu/models/classification.pt)",
     R"(C:/~Lokalni data/School/DP/DP_analyza_grafu/models/classification.pt)"
 };
 
@@ -109,7 +116,7 @@ void doSegmentation(const std::string& outRoot)
         const auto modelPath = getSegmentationModelPath(engineName);
         std::cout << "Inferencing model (Segmentation): " << modelPath << std::endl;
         const auto engine = EngineFactory::findEngine(engineName);
-        engine->loadModel(modelPath);
+        HANDLE_LOAD(engine->loadModel(modelPath));
         for (const auto& imagePath : IMAGE_PATHS)
         {
             const auto isLibTorch = isTorch(engineName);
@@ -146,7 +153,7 @@ void doClassification(const std::string& outRoot)
 
         const auto isLibTorch = isTorch(engineName);
         const auto engine = EngineFactory::findEngine(engineName);
-        engine->loadModel(modelPath);
+        HANDLE_LOAD(engine->loadModel(modelPath))
         for (const auto& imagePath : IMAGE_PATHS)
         {
             const auto image = sample::preprocessImage(imread(imagePath, cv::IMREAD_COLOR), 224, 224, isLibTorch);
@@ -184,6 +191,6 @@ int main(const int argv, char** argc)
     const auto rootFolderPath = std::string(argc[1]);
 
     EngineFactory::registerAllEngines();
-    doSegmentation(rootFolderPath);
-    // doClassification(rootFolderPath);
+    //doSegmentation(rootFolderPath);
+    doClassification(rootFolderPath);
 }

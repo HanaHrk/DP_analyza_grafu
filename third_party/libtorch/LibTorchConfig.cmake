@@ -7,12 +7,17 @@ endif ()
 
 find_package(Torch REQUIRED HINTS ${LibTorch_HOME})
 
-if(MSVC)
-    FILE(GLOB LibTorch_LIBRARIES "${LibTorch_HOME}/lib/*.lib")
-endif ()
-
 if (NOT DEFINED LibTorch_INCLUDES)
     set(LibTorch_INCLUDES ${TORCH_INCLUDE_DIRS})
+endif ()
+
+if (NOT DEFINED LibTorch_LIBRARIES)
+    set(LibTorch_LIBRARIES "${TORCH_LIBRARIES};${TORCH_CUDA_LIBRARIES}")
+endif ()
+
+if (NOT DEFINED LibTorch_BINARIES)
+    set(LibTorch_BINARIES "${TORCH_INSTALL_PREFIX}/lib")
+    string(REPLACE "\\" "/" LibTorch_BINARIES ${LibTorch_BINARIES})
 endif ()
 
 add_library(LibTorch INTERFACE)

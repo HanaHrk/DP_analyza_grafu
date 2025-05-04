@@ -33,8 +33,8 @@ set(LIBRARY InferenceTools)
 add_library(${LIBRARY} INTERFACE)
 target_include_directories(${LIBRARY} INTERFACE ${InferenceTools_INCLUDES})
 
-find_package(opencv_deps HINTS ${CMAKE_SOURCE_DIR}/third_party/opencv REQUIRED)
-target_link_libraries(${LIBRARY} INTERFACE opencv_deps)
+find_package(CV HINTS ${CMAKE_SOURCE_DIR}/third_party/opencv REQUIRED)
+target_link_libraries(${LIBRARY} INTERFACE CV)
 find_package(EngineRegistrator HINTS src/engines/registration REQUIRED)
 target_link_libraries(${LIBRARY} INTERFACE EngineRegistrator)
 

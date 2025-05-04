@@ -15,10 +15,10 @@ endfunction()
 message("--- Abstract Engine Start ---")
 
 # Create engine library
-add_library(abstract_engine INTERFACE)
-target_link_libraries(abstract_engine INTERFACE opencv_deps)
+add_library(AbstractInferenceEngine INTERFACE)
+target_link_libraries(AbstractInferenceEngine INTERFACE CV)
 
 # Add include files
-target_include_directories(abstract_engine INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
+target_include_directories(AbstractInferenceEngine INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
 
 message("--- Abstract Engine End ---")

@@ -42,10 +42,10 @@ cv::Mat sample::preprocessImage(const cv::Mat& image, const int width, const int
     return preprocessedImage;
 }
 
-std::vector<float> imageToVector(const cv::Mat& image, bool useBGR)
+std::vector<float> sample::loadToVector(const cv::Mat& image, bool useBGR)
 {
     std::vector<float> data;
-    data.reserve(224 * 224 * 3); // Reserve space for 224x224x3 elements
+    data.reserve(image.channels() * image.cols * image.rows); // Reserve space for 224x224x3 elements
 
     // Iterate over the image and store pixel values in the vector
     for (int y = 0; y < image.rows; ++y)
@@ -71,9 +71,4 @@ std::vector<float> imageToVector(const cv::Mat& image, bool useBGR)
     }
 
     return data;
-}
-
-std::vector<float> sample::loadToVector(const cv::Mat& image, bool useBGR)
-{
-    return imageToVector(image, useBGR);
 }

@@ -6,7 +6,7 @@
 #elif USE_TENSORRT
 #include <inferencetools/TensorRTEngineSequential.hpp>
 #elif USE_LIBTORCH
-#include "inferencetools/LibTorchEngineSequential.hpp"
+#include <inferencetools/LibTorchEngineSequential.hpp>
 #endif
 
 std::map<std::string, EngineFactory::EngineBuilder> EngineFactory::engineMaps_;
