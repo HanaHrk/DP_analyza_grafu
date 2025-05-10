@@ -44,6 +44,6 @@ fdeep::tensor FrugallyDeepEngine::_toFdeepTensor(const InferInput& input) const
         throw EngineRuntimeException(
             "Input Shape is not defined properly. Model or user must define input shape for inference.");
     }
-    const auto shape = fdeep::tensor_shape(inputHeight, inputHeight, inputDepth);
+    const auto shape = fdeep::tensor_shape(inputWidth, inputHeight, inputDepth);
     return fdeep::tensor{shape, input.input};
 }

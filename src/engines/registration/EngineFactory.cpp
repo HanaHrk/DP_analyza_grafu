@@ -3,7 +3,7 @@
 
 #if USE_FRUGALLY_DEEP
 #include <inferencetools/FrugallyDeepEngineSequential.hpp>
-#elif USE_TENSORRT
+#elif BLA
 #include <inferencetools/TensorRTEngineSequential.hpp>
 #elif USE_LIBTORCH
 #include <inferencetools/LibTorchEngineSequential.hpp>
@@ -42,7 +42,7 @@ void EngineFactory::registerAllEngines()
     registerEngine("FrugallyDeep", [] { return std::make_unique<FrugallyDeepEngineSequential>(); });
 #endif
 
-#if USE_TENSORRT
+#if BLA
     registerEngine("TensorRT", [] { return std::make_unique<TensorRTEngineSequential>(); });
 #endif
 

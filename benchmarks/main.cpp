@@ -1,10 +1,17 @@
 #include <ClassificationUtils.hpp>
-#include <filesystem>
+#include <SegmentationUtils.hpp>
+#include <ArgsParser.hpp>
+#include <DataLoader.hpp>
 #include <inferencetools/EngineFactory.hpp>
 #include <fstream>
+#include <iostream>
+#include <filesystem>
+#include <vector>
+#include <random>
+#include <memory>
+#include <optional>
 
-#include "SegmentationUtils.hpp"
-#include "DataLoader.hpp"
+#include "inferencetools/EngineNotFound.hpp"
 
 #define HANDLE_LOAD(call)                   \
     try {                                   \
@@ -13,51 +20,13 @@
         std::cerr << e.what() << std::endl; \
     }
 
-const std::vector<std::string> IMAGE_PATHS = {
-    "C:/data/graphs/area/PMC1464820___pgen.0020068.g002.jpg",
-    "C:/data/graphs/area/PMC7219504___20.jpg",
-    "C:/data/graphs/area/PMC3148245___g003.jpg",
-    "C:/data/graphs/area/PMC8170440___17_HTML.jpg",
-    "C:/data/graphs/area/PMC8328422___05.jpg",
-    "C:/data/graphs/heatmap/PMC5982579___04.jpg",
-    "C:/data/graphs/heatmap/PMC6281281___g002.jpg",
-    "C:/data/graphs/heatmap/PMC6390891___20_HTML.jpg",
-    "C:/data/graphs/heatmap/PMC7138785___1_HTML.jpg",
-    "C:/data/graphs/heatmap/PMC8037530___g006.jpg",
-    "C:/data/graphs/horizontal_bar/PMC8284307___4.jpg",
-    "C:/data/graphs/horizontal_bar/PMC8287754___8_HTML.jpg",
-    "C:/data/graphs/horizontal_bar/PMC8207607___3_HTML.jpg",
-    "C:/data/graphs/horizontal_bar/PMC8288115___04.jpg",
-    "C:/data/graphs/horizontal_bar/PMC8160898___6.jpg",
-    "C:/data/graphs/scatter-line/PMC6018568___3.jpg",
-    "C:/data/graphs/scatter-line/PMC6039173___10-figsupp1.jpg",
-    "C:/data/graphs/scatter-line/PMC6102526___2.jpg",
-    "C:/data/graphs/scatter-line/PMC6140717___4-figsupp3.jpg",
-    "C:/data/graphs/scatter-line/PMC6164382___7.jpg",
-    "C:/data/graphs/scatter-line/PMC6176658___g0005.jpg",
-    "C:/data/graphs/vertical_box/PMC2483419___g002.jpg",
-    "C:/data/graphs/vertical_box/PMC3411624___g005.jpg",
-    "C:/data/graphs/vertical_box/PMC3748051___5.jpg",
-    "C:/data/graphs/vertical_box/PMC5769657___g1.jpg",
-    "C:/data/graphs/vertical_box/PMC5818887___08.jpg",
 
+enum InferenceType
+{
+    CLASSIFICATION,
+    SEGMENTATION
 };
 
-
-const std::vector<std::string> JSON_MODELS = {
-    R"(C:/~Lokalni data/School/DP/DP_analyza_grafu/models/segmentation.json)",
-    R"(C:/~Lokalni data/School/DP/DP_analyza_grafu/models/classification.json)"
-};
-
-const std::vector<std::string> ONNX_MODELS = {
-    R"(C:/~Lokalni data/School/DP/DP_analyza_grafu/models/segmenation.onnx)",
-    R"(C:/~Lokalni data/School/DP/DP_analyza_grafu/models/classification.onnx)"
-};
-
-const std::vector<std::string> PYTORCH_MODELS = {
-    R"(C:/~Lokalni data/School/DP/DP_analyza_grafu/models/classification.pt)",
-    R"(C:/~Lokalni data/School/DP/DP_analyza_grafu/models/classification.pt)"
-};
 
 bool isTorch(const std::string& name)
 {
@@ -74,123 +43,246 @@ bool isTensorRT(const std::string& name)
     return name == "TensorRT";
 }
 
-std::string getSegmentationModelPath(const std::string& engineName)
+std::vector<std::string> getEngineName(const std::string& modelPath)
 {
-    if (isTorch(engineName))
+    std::cout << "Getting engine name for model: " << modelPath << std::endl;
+    const auto modelSuffixIndex = modelPath.find_last_of('.');
+    const auto modelSuffix = modelPath.substr(modelSuffixIndex);
+    if (modelSuffix == ".json")
     {
-        return PYTORCH_MODELS[0];
+        std::cout << "Selected FrugallyDeep engine for .json model" << std::endl;
+        return {"FrugallyDeep"};
     }
-    if (isFrugally(engineName))
+    if (modelSuffix == ".onnx")
     {
-        return JSON_MODELS[0];
+        std::cout << "Selected TensorRT engine for .onnx model" << std::endl;
+        return {"TensorRT"};
     }
-    if (isTensorRT(engineName))
+    if (modelSuffix == ".pt")
     {
-        return ONNX_MODELS[0];
+        std::cout << "Selected LibTorch engine for .pt model" << std::endl;
+        return {"LibTorch"};
     }
-    return "";
+    std::cout << "Warning: No suitable engine found for model extension: " << modelSuffix << std::endl;
+    return {};
 }
 
-std::string getClassificationModelPath(const std::string& engineName)
+void doSegmentation(const std::string& outputDir, const std::string& inputDir,
+                    const std::unique_ptr<InferenceEngineSequential>& engine,
+                    const std::string& engineName,
+                    const bool debug)
 {
-    if (isTorch(engineName))
+    std::cout << "\nStarting segmentation with " << engineName << " engine" << std::endl;
+    std::cout << "Input directory: " << inputDir << std::endl;
+    std::cout << "Output directory: " << outputDir << std::endl;
+    constexpr int totalImages = 100;
+    int lastPercentage = -1;
+    for (int imageIndex = 0; imageIndex < totalImages; imageIndex++)
     {
-        return PYTORCH_MODELS[1];
-    }
-    if (isFrugally(engineName))
-    {
-        return JSON_MODELS[1];
-    }
-    if (isTensorRT(engineName))
-    {
-        return ONNX_MODELS[1];
-    }
-    return "";
-}
-
-void doSegmentation(const std::string& outRoot)
-{
-    const auto engineNames = EngineFactory::getAvailableEngines();
-    for (const auto& engineName : engineNames)
-    {
-        const auto modelPath = getSegmentationModelPath(engineName);
-        std::cout << "Inferencing model (Segmentation): " << modelPath << std::endl;
-        const auto engine = EngineFactory::findEngine(engineName);
-        HANDLE_LOAD(engine->loadModel(modelPath));
-        for (const auto& imagePath : IMAGE_PATHS)
+        const int currentPercentage = imageIndex * 100 / totalImages;
+        if (currentPercentage != lastPercentage)
         {
-            const auto isLibTorch = isTorch(engineName);
-            constexpr int SEGMENTATION_WIDTH = 224;
-            constexpr int SEGMENTATION_HEIGHT = 224;
-            constexpr int SEGMENTATION_DEPTH = 3;
-            constexpr int OUTPUT_SIZE = SEGMENTATION_WIDTH * SEGMENTATION_HEIGHT * SEGMENTATION_DEPTH;
-            const auto image = sample::preprocessImage(imread(imagePath, cv::IMREAD_COLOR), SEGMENTATION_WIDTH,
-                                                       SEGMENTATION_HEIGHT, isLibTorch);
-            const auto input = InferInput(sample::loadToVector(image, isLibTorch), SEGMENTATION_WIDTH,
-                                          SEGMENTATION_HEIGHT,
-                                          SEGMENTATION_DEPTH, OUTPUT_SIZE);
-            const auto prediction = engine->predict(input);
-            const auto outputImage = sample::postProcessSegmentation(prediction);
-
-            const auto imageName = imagePath.substr(imagePath.find_last_of("/") + 1);
-            const auto outputFolderPath = outRoot + "/" + engineName + "/segmentation/";
-            const auto outputFilePath = outputFolderPath + imageName;
-
-            std::filesystem::create_directories(outputFolderPath);
-            imwrite(outputFilePath, outputImage);
-            std::cout << "Segmentation result written to: " << outputFilePath << std::endl;
+            std::cout << "Progress: " << currentPercentage << "%" << std::endl;
+            lastPercentage = currentPercentage;
         }
-    }
-}
-
-void doClassification(const std::string& outRoot)
-{
-    const auto engineNames = EngineFactory::getAvailableEngines();
-    for (const auto& engineName : engineNames)
-    {
-        const auto modelPath = getClassificationModelPath(engineName);
-        std::cout << "Inferencing model (Classification): " << modelPath << std::endl;
-
+        const auto imagePath = sample::getRandomFilePath(inputDir);
+        if (debug)
+        {
+            std::cout << "Selected image: " << imagePath << std::endl;
+        }
         const auto isLibTorch = isTorch(engineName);
-        const auto engine = EngineFactory::findEngine(engineName);
-        HANDLE_LOAD(engine->loadModel(modelPath))
-        for (const auto& imagePath : IMAGE_PATHS)
+        constexpr int SEGMENTATION_WIDTH = 224;
+        constexpr int SEGMENTATION_HEIGHT = 224;
+        constexpr int SEGMENTATION_DEPTH = 3;
+        constexpr int OUTPUT_SIZE = SEGMENTATION_WIDTH * SEGMENTATION_HEIGHT;
+        const auto image = sample::preprocessImage(cv::imread(imagePath, cv::IMREAD_COLOR), SEGMENTATION_WIDTH,
+                                                   SEGMENTATION_HEIGHT, isLibTorch);
+        const auto input = InferInput(sample::loadToVector(image, isLibTorch), MODEL_PROPERTIES,
+                                      MODEL_PROPERTIES,
+                                      MODEL_PROPERTIES, MODEL_PROPERTIES);
+        const auto prediction = engine->predict(input);
+        const auto outputImage = sample::postProcessSegmentation(prediction);
+
+        const auto imageName = imagePath.substr(imagePath.find_last_of("/") + 1);
+        const auto outputFolderPath = outputDir + "/" + engineName + "/segmentation/";
+        const auto outputFilePath = outputFolderPath + imageName;
+
+        std::filesystem::create_directories(outputFolderPath);
+        if (debug)
         {
-            const auto image = sample::preprocessImage(imread(imagePath, cv::IMREAD_COLOR), 224, 224, isLibTorch);
-            const auto input = InferInput(sample::loadToVector(image, isLibTorch));
+            std::cout << "Prediction completed. Writing output to: " << outputFilePath << std::endl;
+        }
+        imwrite(outputFilePath, outputImage);
+    }
+    std::cout << "Segmentation processing completed" << std::endl;
+}
 
-            const auto imageSlashIndex = imagePath.find_last_of("/");
-            const auto parentFolder = imagePath.substr(0, imagePath.find_last_of("/"));
-            const auto classSlashIndex = parentFolder.find_last_of("/");
-            const auto expectedClass = parentFolder.substr(classSlashIndex + 1);
+void doClassification(const std::string& outputDir, const std::string& inputDir,
+                      const std::unique_ptr<InferenceEngineSequential>& engine,
+                      const std::string& engineName,
+                      bool debug)
+{
+    std::cout << "\nStarting classification with " << engineName << " engine" << std::endl;
+    std::cout << "Input directory: " << inputDir << std::endl;
+    std::cout << "Output directory: " << outputDir << std::endl;
 
-            const auto prediction = engine->predict(input);
-            const auto outputText = sample::postProcessClassification(prediction);
+    std::vector<std::string> trueLabels;
+    std::vector<std::string> predictedLabels;
+    bool isLibTorch = isTorch(engineName);
 
-            const auto imageName = imagePath.substr(imageSlashIndex + 1);
-            const auto outputFolderPath = outRoot + "/" + engineName + "/classification/" + expectedClass + "/";
-            const auto outputFilePath = outputFolderPath + imageName + ".txt";
+    const auto allFiles = sample::getAllFiles(inputDir);
+    const int totalFiles = allFiles.size();
+    int processedCount = 0;
+    int lastPercentage = -1;
 
-            std::filesystem::create_directories(outputFolderPath);
-            std::ofstream(outputFilePath) << outputText;
-            std::cout << "Classification ("
-                << std::distance(prediction.begin(), std::max_element(prediction.begin(), prediction.end()))
-                << ") text written to: " << outputFilePath << std::endl;
+    for (const auto& imagePath : allFiles)
+    {
+        int currentPercentage = processedCount * 100 / totalFiles;
+        if (currentPercentage != lastPercentage)
+        {
+            std::cout << "Progress: " << currentPercentage << "%" << std::endl;
+            lastPercentage = currentPercentage;
+        }
+
+        const auto image = sample::preprocessImage(imread(imagePath, cv::IMREAD_COLOR), 224, 224, isLibTorch);
+        const auto input = InferInput(sample::loadToVector(image, isLibTorch));
+
+        const auto imageSlashIndex = imagePath.find_last_of("/");
+        const auto parentFolder = imagePath.substr(0, imagePath.find_last_of("/"));
+        const auto classSlashIndex = parentFolder.find_last_of("/");
+        const auto expectedClass = parentFolder.substr(classSlashIndex + 1);
+
+        const auto prediction = engine->predict(input);
+        const auto predictionClass = sample::getClassName(prediction);
+        const auto outputText = sample::postProcessClassification(prediction);
+
+        trueLabels.push_back(expectedClass);
+        predictedLabels.push_back(predictionClass);
+
+        const auto imageName = imagePath.substr(imageSlashIndex + 1);
+        const auto outputFolderPath = outputDir + "/" + engineName + "/classification/" + expectedClass + "/";
+        const auto outputFilePath = outputFolderPath + imageName + ".txt";
+
+        std::filesystem::create_directories(outputFolderPath);
+        if (debug)
+        {
+            std::cout << "Prediction: " << predictionClass << " (Expected: " << expectedClass << ")" << std::endl;
+            std::cout << "Writing results to: " << outputFilePath << std::endl;
+        }
+        std::ofstream(outputFilePath) << outputText;
+        processedCount++;
+    }
+    std::cout << "\nClassification processing completed. Generating confusion matrix..." << std::endl;
+    sample::printConfusionMatrix(predictedLabels, trueLabels);
+}
+
+void inference(const std::string& outputDir, const std::string& inputDir, const std::vector<std::string>& models,
+               const bool debug,
+               const InferenceType& type)
+{
+    if (models.empty())
+    {
+        return;
+    }
+    std::cout << "\nStarting inference process" << std::endl;
+    std::cout << "Type: " << (type == CLASSIFICATION ? "Classification" : "Segmentation") << std::endl;
+    std::cout << "Number of models to process: " << models.size() << std::endl;
+
+    for (const auto& model : models)
+    {
+        std::cout << "\nProcessing model: " << model << std::endl;
+        const auto modelEngineNames = getEngineName(model);
+
+        for (const auto& modelEngineName : modelEngineNames)
+        {
+            std::cout << "Initializing engine: " << modelEngineName << std::endl;
+            try
+            {
+                const auto engine = EngineFactory::findEngine(modelEngineName);
+                std::cout << "Loading model..." << std::endl;
+                engine->loadModel(model);
+
+                if (type == CLASSIFICATION)
+                {
+                    doClassification(outputDir, inputDir, engine, modelEngineName, debug);
+                }
+                else if (type == SEGMENTATION)
+                {
+                    doSegmentation(outputDir, inputDir, engine, modelEngineName, debug);
+                }
+            }
+            catch (const EngineNotFound& e)
+            {
+                std::cerr << "Engine initialization failed: " << e.what() << std::endl;
+            }
         }
     }
+    std::cout << "Inference process completed" << std::endl;
+}
+
+std::vector<std::string> argsToVector(const int argv, char** argc)
+{
+    std::vector<std::string> argsVector;
+    for (int i = 1; i < argv; ++i)
+    {
+        argsVector.emplace_back(argc[i]);
+    }
+    return argsVector;
+}
+
+void printUsage()
+{
+    std::cout << "Usage: ./InferenceBenchmark[.exe] [options]\n\n";
+    std::cout << "Options:\n";
+    std::cout << "  --output_dir=<path>         Path to output directory [required|single]\n";
+    std::cout << "  --inputDir=<path>           Path to input directory with images [required|single]\n";
+    std::cout << "  --classification=<path>     Path to classification inference model [required|multiple]\n";
+    std::cout << "  --segmentation=<path>       Path to segmentation inference model [required|multiple]\n";
+    std::cout << "  --debug                     Allow debug logging [simple]\n";
+    std::cout << "  --help                      Print this help message [simple]\n";
+}
+
+void handleArgs(const std::vector<std::string>& argsVector)
+{
+    const auto outputDir = sample::extractArgsSingle(argsVector, "output_dir");
+    const auto inputDir = sample::extractArgsSingle(argsVector, "input_dir");
+    const auto classificationModels = sample::extractArgsMulti(argsVector, "classification");
+    const auto segmentationModels = sample::extractArgsMulti(argsVector, "segmentation");
+    const auto debug = sample::extractArgsSimple(argsVector, "debug");
+    if (sample::extractArgsSimple(argsVector, "help"))
+    {
+        printUsage();
+        exit(0);
+    }
+    if (!outputDir)
+    {
+        printUsage();
+        exit(1);
+    }
+    if (!inputDir)
+    {
+        printUsage();
+        exit(1);
+    }
+    if (!classificationModels && !segmentationModels)
+    {
+        printUsage();
+        exit(1);
+    }
+    inference(outputDir.value(), inputDir.value(), segmentationModels.value(), debug, SEGMENTATION);
+    inference(outputDir.value(), inputDir.value(), classificationModels.value(), debug, CLASSIFICATION);
 }
 
 
 int main(const int argv, char** argc)
 {
-    if (argv != 2)
-    {
-        std::cerr << "Provide output folder via command line." << std::endl;
-        return 5;
-    }
-    const auto rootFolderPath = std::string(argc[1]);
-
+    std::cout << "Starting InferenceBenchmark..." << std::endl;
+    std::cout << "Registering available engines..." << std::endl;
     EngineFactory::registerAllEngines();
-    //doSegmentation(rootFolderPath);
-    doClassification(rootFolderPath);
+
+    std::cout << "Processing command line arguments..." << std::endl;
+    const auto argsVector = argsToVector(argv, argc);
+    handleArgs(argsVector);
+
+    std::cout << "InferenceBenchmark completed successfully" << std::endl;
 }

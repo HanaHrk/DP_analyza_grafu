@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <filesystem>
 #include <opencv2/opencv.hpp>
 
 namespace sample
@@ -18,4 +19,8 @@ namespace sample
     std::vector<float> loadToVector(const cv::Mat& image, bool useBGR);
 
     cv::Mat preprocessImage(const cv::Mat& image, int width, int height, bool normalize);
+
+    std::vector<std::string> getAllFiles(const std::filesystem::path& rootPath);
+
+    std::string getRandomFilePath(const std::filesystem::path& folderPath);
 }

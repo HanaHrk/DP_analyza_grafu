@@ -59,4 +59,5 @@ public:
     virtual void loadModel(const std::string& enginePath) = 0;
 
     [[nodiscard]] virtual Tensor predict(const InferInput& input) const = 0;
+
 };

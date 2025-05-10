@@ -1,7 +1,11 @@
 #pragma once
 
 #include <inferencetools/InferenceEngine.hpp>
+#if _MSC_VER
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
+#else
+#include <onnxruntime_cxx_api.h>
+#endif
 
 struct MemoryDeleter
 {

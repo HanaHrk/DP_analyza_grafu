@@ -18,10 +18,10 @@ if (USE_FRUGALLY_DEEP)
     list(APPEND ENGINE_LIBRARIES FrugallyDeepInferenceEngine)
 endif ()
 
-if (USE_TENSORRT)
+if (BLA)
     # Add tensor_rt engine
     find_package(TensorRTInferenceEngine HINTS ${CMAKE_SOURCE_DIR}/src/engines/tensorrt REQUIRED)
-    list(APPEND COMPILE_OPTIONS -DUSE_TENSORRT=1)
+    list(APPEND COMPILE_OPTIONS -DBLA=1)
     list(APPEND ENGINE_LIBRARIES TensorRTInferenceEngine)
 endif ()
 

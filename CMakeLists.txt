@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.30.5)
-project(InferenceBenchmark LANGUAGES CXX CUDA)
+cmake_minimum_required(VERSION 3.26)
+project(InferenceBenchmark LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Options to enable/disable libraries
 option(USE_FRUGALLY_DEEP "Enable Frugally-Deep" OFF)
-option(USE_TENSORRT "Enable TensorRT" OFF)
+option(BLA "Enable Tensor" OFF)
 option(USE_LIBTORCH "Enable LibTorch" OFF)
 
 # Option to build samples benchmarks
@@ -20,6 +20,7 @@ set(InferenceBenchmark_SOURCES
         benchmarks/SegmentationUtils.cpp
         benchmarks/include/SegmentationUtils.hpp
         benchmarks/ClassificationUtils.cpp
+        benchmarks/ArgsParser.cpp
         benchmarks/include/ClassificationUtils.hpp
 )
 set(InferenceBenchmark_INCLUDES

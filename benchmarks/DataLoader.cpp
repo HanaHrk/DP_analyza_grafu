@@ -1,6 +1,7 @@
 #include <DataLoader.hpp>
 #include <ImageFormatException.h>
 #include <filesystem>
+#include <random>
 
 
 cv::Mat sample::preprocessImage(const cv::Mat& image, const int width, const int height, bool normalize)
@@ -42,7 +43,7 @@ cv::Mat sample::preprocessImage(const cv::Mat& image, const int width, const int
     return preprocessedImage;
 }
 
-std::vector<float> sample::loadToVector(const cv::Mat& image, bool useBGR)
+std::vector<float> sample::loadToVector(const cv::Mat& image, const bool useBGR)
 {
     std::vector<float> data;
     data.reserve(image.channels() * image.cols * image.rows); // Reserve space for 224x224x3 elements
@@ -71,4 +72,69 @@ std::vector<float> sample::loadToVector(const cv::Mat& image, bool useBGR)
     }
 
     return data;
+}
+
+std::vector<std::string> sample::getAllFiles(const std::filesystem::path& rootPath)
+{
+    std::vector<std::filesystem::path> allFiles;
+    std::vector<std::string> allFilesPaths;
+    std::function<void(const std::filesystem::path&)> findFiles =
+        [&](const std::filesystem::path& currentPath)
+    {
+        for (const auto& entry : std::filesystem::directory_iterator(currentPath))
+        {
+            if (std::filesystem::is_regular_file(entry.status()))
+            {
+                allFiles.push_back(entry.path());
+                auto path = std::filesystem::absolute(entry).string();
+                std::replace(path.begin(), path.end(), '\\', '/');
+                allFilesPaths.push_back(path);
+            }
+            else if (std::filesystem::is_directory(entry.status()))
+            {
+                findFiles(entry.path());
+            }
+        }
+    };
+    findFiles(rootPath);
+    return allFilesPaths;
+}
+
+std::string sample::getRandomFilePath(const std::filesystem::path& folderPath)
+{
+    if (!std::filesystem::exists(folderPath) || !std::filesystem::is_directory(folderPath))
+    {
+        throw std::runtime_error("Folder does not exist");
+    }
+
+    std::vector<std::filesystem::path> allFiles;
+    std::function<void(const std::filesystem::path&)> findFiles =
+        [&](const std::filesystem::path& currentPath)
+    {
+        for (const auto& entry : std::filesystem::directory_iterator(currentPath))
+        {
+            if (std::filesystem::is_regular_file(entry.status()))
+            {
+                allFiles.push_back(entry.path());
+            }
+            else if (std::filesystem::is_directory(entry.status()))
+            {
+                findFiles(entry.path());
+            }
+        }
+    };
+
+    findFiles(folderPath);
+
+    if (allFiles.empty())
+    {
+        throw std::runtime_error("No files found");
+    }
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distrib(0, allFiles.size() - 1);
+    auto absolutePath = std::filesystem::absolute(allFiles[distrib(gen)]).string();
+    std::replace(absolutePath.begin(), absolutePath.end(), '\\', '/');
+    return absolutePath;
 }
