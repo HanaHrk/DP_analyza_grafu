@@ -192,7 +192,6 @@ void inference(const std::string& outputDir, const std::string& inputDir, const 
     {
         std::cout << "\nProcessing model: " << model << std::endl;
         const auto modelEngineNames = getEngineName(model);
-
         for (const auto& modelEngineName : modelEngineNames)
         {
             std::cout << "Initializing engine: " << modelEngineName << std::endl;
@@ -211,9 +210,9 @@ void inference(const std::string& outputDir, const std::string& inputDir, const 
                     doSegmentation(outputDir, inputDir, engine, modelEngineName, debug);
                 }
             }
-            catch (const EngineNotFound& e)
+            catch (const EngineNotFound&)
             {
-                std::cerr << "Engine initialization failed: " << e.what() << std::endl;
+                std::cerr << "Engine initialization failed for model [" << modelEngineName << "]: Engine not found." << std::endl;
             }
         }
     }
@@ -269,8 +268,14 @@ void handleArgs(const std::vector<std::string>& argsVector)
         printUsage();
         exit(1);
     }
-    inference(outputDir.value(), inputDir.value(), segmentationModels.value(), debug, SEGMENTATION);
-    inference(outputDir.value(), inputDir.value(), classificationModels.value(), debug, CLASSIFICATION);
+    if (segmentationModels)
+    {
+        inference(outputDir.value(), inputDir.value(), segmentationModels.value(), debug, SEGMENTATION);
+    }
+    if (classificationModels)
+    {
+        inference(outputDir.value(), inputDir.value(), classificationModels.value(), debug, CLASSIFICATION);
+    }
 }
 
 

@@ -5,7 +5,15 @@ if (NOT DEFINED LibTorch_HOME)
     return(1)
 endif ()
 
-find_package(Torch REQUIRED HINTS ${LibTorch_HOME})
+find_package(Cuda HINTS ${CMAKE_SOURCE_DIR}/third_party/cuda REQUIRED)
+
+message(STATUS "LibTorch_HOME=${LibTorch_HOME}")
+
+if (DEFINED LibTorch_HOME)
+    set(Torch_DIR ${LibTorch_HOME})
+endif ()
+
+find_package(Torch REQUIRED)
 
 if (NOT DEFINED LibTorch_INCLUDES)
     set(LibTorch_INCLUDES ${TORCH_INCLUDE_DIRS})

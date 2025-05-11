@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <utility>
 
-class EngineRuntimeException : public std::exception
+class EngineRuntimeException final : public std::exception
 {
 private:
     const std::string message;
@@ -13,7 +13,7 @@ public:
     {
     }
 
-    [[nodiscard]] const char* what() const override
+    [[nodiscard]] const char* what() const noexcept override
     {
         return message.c_str();
     }
