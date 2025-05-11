@@ -1,11 +1,14 @@
-cmake_minimum_required(VERSION 3.10)
+message("----- Frugally Deep Searching Start")
 
-message("--- Frugally Deep Searching Start ---")
-
-# Create interface library to consolidate all dependencies
+# Create an interface library for Frugally Deep
 add_library(FrugallyDeep INTERFACE IMPORTED)
 
-# Link all required libraries
+# Set include directories for the FrugallyDeep library
+# These directories contain necessary header files for:
+# - FunctionalPlus: A functional programming library
+# - JSON: JSON for Modern C++
+# - Eigen: Linear algebra library
+# - frugally-deep: Main library headers
 target_include_directories(FrugallyDeep
         INTERFACE
         ${CMAKE_CURRENT_LIST_DIR}/FunctionalPlus/include
@@ -14,4 +17,4 @@ target_include_directories(FrugallyDeep
         ${CMAKE_CURRENT_LIST_DIR}/frugally-deep/include
 )
 
-message("--- Frugally Deep Searching End ---")
+message("----- Frugally Deep Searching End")
