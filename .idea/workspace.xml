@@ -1,0 +1,488 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="BackendCodeEditorMiscSettings">
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="5" type="long" />
+    <option name="/Default/Environment/UserInterface/HierarchyView/ViewStyle/@EntryValue" value="SuperTypes" type="string" />
+    <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
+    <option name="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue" value="true" type="bool" />
+    <option name="/Default/Housekeeping/LiveTemplatesHousekeeping/HotspotSessionHintIsShown/@EntryValue" value="true" type="bool" />
+    <option name="/Default/Housekeeping/OptionsDialog/SelectedPageId/@EntryValue" value="CppFormatterOtherPage" type="string" />
+    <option name="/Default/RiderDebugger/RiderRestoreDecompile/RestoreDecompileSetting/@EntryValue" value="false" type="bool" />
+  </component>
+  <component name="CMakePresetLoader">{
+  &quot;useNewFormat&quot;: true
+}</component>
+  <component name="CMakeProjectFlavorService">
+    <option name="flavorId" value="CMakePlainProjectFlavor" />
+  </component>
+  <component name="CMakeReloadState">
+    <option name="reloaded" value="true" />
+  </component>
+  <component name="CMakeRunConfigurationManager">
+    <generated>
+      <config projectName="InferenceBenchmark" targetName="EngineRegistrator" />
+      <config projectName="InferenceBenchmark" targetName="FrugallyDeepInferenceEngine" />
+      <config projectName="InferenceBenchmark" targetName="LibTorchInferenceEngine" />
+      <config projectName="InferenceBenchmark" targetName="InferenceBenchmark" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Frugally Deep - Release - Windows" ENABLED="true" GENERATION_DIR="cmake-frugally-deep-release-windows" CONFIG_NAME="Release" TOOLCHAIN_NAME="Visual Studio" GENERATION_OPTIONS="-DUSE_FRUGALLY_DEEP=1 -DCV_HOME=&quot;C:\Libs\opencv\build&quot;" />
+      <configuration PROFILE_NAME="Frugally Deep - Debug - Windows" ENABLED="true" GENERATION_DIR="cmake-frugally-deep-debug-windows" CONFIG_NAME="Debug" TOOLCHAIN_NAME="Visual Studio" GENERATION_OPTIONS="-DUSE_FRUGALLY_DEEP=1 -DCV_HOME=&quot;C:\Libs\opencv\build&quot;" />
+      <configuration PROFILE_NAME="LibTorch - Release - Windows" ENABLED="true" GENERATION_DIR="cmake-libtorch-release-windows" CONFIG_NAME="Release" TOOLCHAIN_NAME="Visual Studio" GENERATION_OPTIONS="-DUSE_LIBTORCH=1 -DLibTorch_HOME=&quot;C:\Libs\libtorch\share\cmake\Torch&quot; -DCV_HOME=&quot;C:\Libs\opencv\build&quot;" />
+      <configuration PROFILE_NAME="LibTorch - Debug - Windows" ENABLED="true" GENERATION_DIR="cmake-libtorch-debug-windows" CONFIG_NAME="Debug" TOOLCHAIN_NAME="Visual Studio" GENERATION_OPTIONS="-DUSE_LIBTORCH=1 -DLibTorch_HOME=&quot;C:\Libs\libtorch\share\cmake\Torch&quot; -DCV_HOME=&quot;C:\Libs\opencv\build&quot;" />
+      <configuration PROFILE_NAME="Frugally Deep - Release - Ubuntu" ENABLED="true" GENERATION_DIR="cmake-frugally-deep-release-ubuntu" CONFIG_NAME="Release" TOOLCHAIN_NAME="WSL" GENERATION_OPTIONS="-DUSE_FRUGALLY_DEEP=1 -DCV_HOME=/mnt/c/Libs/ubuntu/opencv-4.11.0/opencv-4.11.0" />
+      <configuration PROFILE_NAME="Frugally Deep - Debug - Ubuntu" ENABLED="true" GENERATION_DIR="cmake-frugally-deep-debug-ubuntu" CONFIG_NAME="Debug" TOOLCHAIN_NAME="WSL" GENERATION_OPTIONS="-DUSE_FRUGALLY_DEEP=1 -DCV_HOME=/mnt/c/Libs/ubuntu/opencv-4.11.0/opencv-4.11.0" />
+      <configuration PROFILE_NAME="LibTorch - Release - Ubuntu" ENABLED="true" GENERATION_DIR="cmake-libtorch-release-ubuntu" CONFIG_NAME="Release" TOOLCHAIN_NAME="WSL" GENERATION_OPTIONS="-DUSE_LIBTORCH=1 -DLibTorch_HOME=&quot;/mnt/c/Libs/ubuntu/libtorch-cxx11-abi-shared-with-deps-2.7.0+cu126/libtorch/share/cmake/Torch&quot; -DCUDAToolkit_HOME=&quot;/usr/local/cuda&quot;" />
+      <configuration PROFILE_NAME="LibTorch - Debug - Ubuntu" ENABLED="true" GENERATION_DIR="cmake-libtorch-debug-ubuntu" CONFIG_NAME="Debug" TOOLCHAIN_NAME="WSL" GENERATION_OPTIONS="-DUSE_LIBTORCH=1 -DLibTorch_HOME=&quot;/mnt/c/Libs/ubuntu/libtorch-cxx11-abi-shared-with-deps-2.7.0+cu126/libtorch/share/cmake/Torch&quot; -DCUDAToolkit_HOME=&quot;/usr/local/cuda&quot;" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="a59b2749-0e4a-4c23-a686-25b59a77b589" name="Changes" comment="Refactor FrugallyDeep engine implementation and add parallel support&#10;&#10;Replaced `FrugallyDeepEngineSequential` with a unified `FrugallyDeepEngine`. Added support for parallel processing using both `std::async` and `std::execution::par_unseq` modes. Refactored benchmarks to handle classification and added utility for confusion matrix generation.">
+      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/eigen/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/eigen/debug/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/eigen/debug/lldb/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/main.cpp" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Frugally Deep - Release - Windows" />
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;HanaHrk&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/HanaHrk/DP_analyza_grafu.git&quot;,
+    &quot;accountId&quot;: &quot;f194c3aa-b482-408e-a20f-d0d71fbc8e1a&quot;
+  }
+}</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock:///dummy.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../../../Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.43.34808/include/vector" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/benchmarks/DataLoader.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/benchmarks/include/DataLoader.hpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/benchmarks/main.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/engines/abstract/include/inferencetools/InferenceEngine.hpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/engines/frugally_deep/FrugallyDeepEngine.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/engines/registration/EngineFactory.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/engines/registration/include/inferencetools/EngineFactory.hpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/engines/tensorrt/TensorRTEngineSequential.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/engines/tensorrt/include/inferencetools/TensorRTEngineSequential.hpp" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="ProjectApplicationVersion">
+    <option name="ide" value="CLion" />
+    <option name="majorVersion" value="2024" />
+    <option name="minorVersion" value="3.2" />
+    <option name="productBranch" value="Classic" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="2snwjVHexvCVefzublII8hJmuYd" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "CMake Application.InferenceBenchmark - Ubuntu.executor": "Run",
+    "CMake Application.InferenceBenchmark - Windows.executor": "Debug",
+    "CMake Application.InferenceBenchmark.executor": "Run",
+    "CMake Application.Json.executor": "Run",
+    "CMake Application.ONNX.executor": "Run",
+    "CMake Debug.Debug.executor": "Debug",
+    "CMake Debug.InferenceBenchmark.executor": "Debug",
+    "RunOnceActivity.RadMigrateCodeStyle": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "RunOnceActivity.west.config.association.type.startup.service": "true",
+    "SONARLINT_PRECOMMIT_ANALYSIS": "true",
+    "cf.advertisement.text.has.clang-format": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "dp-inference",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "C:/~Lokalni data/School/DP/DP_analyza_grafu/tensor-rt-debug",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "CMakeSettings",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\tensor-rt-debug" />
+      <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\models" />
+      <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\libtorch-debug" />
+      <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\src\engines\libtorch\include\inferencetools\exception" />
+      <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\src\engines\frugally_deep\include\inferencetools" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\models" />
+      <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\src\engines\libtorch" />
+      <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\src\engines\tensorrt\include\inferencetools" />
+      <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\src\engines\tensor_rt\include" />
+      <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\third_party\tensor_rt\include" />
+    </key>
+  </component>
+  <component name="RunManager" selected="CMake Application.InferenceBenchmark - Windows">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Debug" type="CMakeListConfigurationType" factoryName="CMakeListConfigurationFactory">
+      <method v="2" />
+    </configuration>
+    <configuration name="EngineRegistrator" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="InferenceBenchmark" TARGET_NAME="EngineRegistrator" CONFIG_NAME="Frugally Deep - Debug - Windows">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="FrugallyDeepInferenceEngine" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="InferenceBenchmark" TARGET_NAME="FrugallyDeepInferenceEngine" CONFIG_NAME="Frugally Deep - Debug - Windows">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="InferenceBenchmark - Ubuntu" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="--output_dir=/mnt/c/data/out --input_dir=/mnt/c/data/graphs &quot;--classification=/mnt/c/~Lokalni data/School/DP/DP_analyza_grafu/models/classification.json&quot; --parallel" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="InferenceBenchmark" TARGET_NAME="InferenceBenchmark" CONFIG_NAME="Frugally Deep - Release - Windows" RUN_TARGET_PROJECT_NAME="InferenceBenchmark" RUN_TARGET_NAME="InferenceBenchmark">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="InferenceBenchmark - Windows" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="--output_dir=$PROJECT_DIR$/../../../../data/out &quot;--input_dir=C:\Users\jan.kubala\Downloads\train-20250513T165911Z-1-001\train&quot; &quot;--classification=$PROJECT_DIR$/models/classification.json&quot; &quot;--classification=C:\~Lokalni data\School\DP\DP_analyza_grafu\models\classification.pt&quot;" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="InferenceBenchmark" TARGET_NAME="InferenceBenchmark" CONFIG_NAME="Frugally Deep - Release - Windows" RUN_TARGET_PROJECT_NAME="InferenceBenchmark" RUN_TARGET_NAME="InferenceBenchmark">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="LibTorchInferenceEngine" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="InferenceBenchmark" TARGET_NAME="LibTorchInferenceEngine" CONFIG_NAME="LibTorch - Release - Windows">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="CMake Application.InferenceBenchmark - Ubuntu" />
+      <item itemvalue="CMake Application.InferenceBenchmark - Windows" />
+      <item itemvalue="CMake Application.EngineRegistrator" />
+      <item itemvalue="CMake Application.FrugallyDeepInferenceEngine" />
+      <item itemvalue="CMake Application.LibTorchInferenceEngine" />
+      <item itemvalue="CMake Debug.Debug" />
+    </list>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="a59b2749-0e4a-4c23-a686-25b59a77b589" name="Changes" comment="" />
+      <created>1739104782285</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1739104782285</updated>
+      <workItem from="1739104784142" duration="1039000" />
+      <workItem from="1739109005736" duration="421000" />
+      <workItem from="1739110638114" duration="288000" />
+      <workItem from="1739115888914" duration="2000" />
+      <workItem from="1739121584786" duration="3059000" />
+      <workItem from="1739200321095" duration="1747000" />
+      <workItem from="1739207430034" duration="923000" />
+      <workItem from="1739254692039" duration="1597000" />
+      <workItem from="1739895681540" duration="1816000" />
+      <workItem from="1740151834341" duration="1256000" />
+      <workItem from="1740154273914" duration="12072000" />
+      <workItem from="1740245834704" duration="149000" />
+      <workItem from="1740245991181" duration="2241000" />
+      <workItem from="1740302182865" duration="8549000" />
+      <workItem from="1740313032251" duration="16771000" />
+      <workItem from="1740413433177" duration="2490000" />
+      <workItem from="1740777682519" duration="14600000" />
+      <workItem from="1740863414233" duration="2704000" />
+      <workItem from="1740908826084" duration="3906000" />
+      <workItem from="1741069127601" duration="2205000" />
+      <workItem from="1741104055678" duration="1852000" />
+      <workItem from="1741366156119" duration="4548000" />
+      <workItem from="1741428489461" duration="13686000" />
+      <workItem from="1741505191975" duration="639000" />
+      <workItem from="1741505903863" duration="25516000" />
+      <workItem from="1741589297742" duration="1425000" />
+      <workItem from="1741875024190" duration="1000" />
+      <workItem from="1741875186916" duration="2609000" />
+      <workItem from="1741979063954" duration="1178000" />
+      <workItem from="1742224901863" duration="1667000" />
+      <workItem from="1742327384700" duration="3122000" />
+      <workItem from="1742402398224" duration="1909000" />
+      <workItem from="1742407490784" duration="5148000" />
+      <workItem from="1742641130209" duration="3088000" />
+      <workItem from="1742650745823" duration="9941000" />
+      <workItem from="1742682420064" duration="920000" />
+      <workItem from="1742750671147" duration="1803000" />
+      <workItem from="1742998510859" duration="1124000" />
+      <workItem from="1743352277916" duration="5127000" />
+      <workItem from="1743431127119" duration="5285000" />
+      <workItem from="1743453693354" duration="1441000" />
+      <workItem from="1743512298889" duration="2375000" />
+      <workItem from="1743535800507" duration="2886000" />
+      <workItem from="1743600914916" duration="8581000" />
+      <workItem from="1743616143146" duration="1992000" />
+      <workItem from="1743875478562" duration="10556000" />
+      <workItem from="1743957657775" duration="6720000" />
+      <workItem from="1744125006223" duration="3343000" />
+      <workItem from="1744225073368" duration="2521000" />
+      <workItem from="1744294033211" duration="972000" />
+      <workItem from="1744295249603" duration="2000" />
+      <workItem from="1744454676802" duration="1268000" />
+      <workItem from="1744494268832" duration="11330000" />
+      <workItem from="1744557203837" duration="269000" />
+      <workItem from="1744559064400" duration="4145000" />
+      <workItem from="1744565840770" duration="372000" />
+      <workItem from="1744828466574" duration="2135000" />
+      <workItem from="1744924728987" duration="4482000" />
+      <workItem from="1744962805075" duration="14295000" />
+      <workItem from="1745003880174" duration="189000" />
+      <workItem from="1745004100606" duration="3736000" />
+      <workItem from="1745078084472" duration="2311000" />
+      <workItem from="1745232819252" duration="6666000" />
+      <workItem from="1745245339628" duration="2803000" />
+      <workItem from="1745250306017" duration="5949000" />
+      <workItem from="1745345708799" duration="2427000" />
+      <workItem from="1745415955981" duration="6248000" />
+      <workItem from="1745511215843" duration="9204000" />
+      <workItem from="1745571454651" duration="198000" />
+      <workItem from="1745571795096" duration="1279000" />
+      <workItem from="1745614944374" duration="966000" />
+      <workItem from="1745648465548" duration="14031000" />
+      <workItem from="1745683156642" duration="5325000" />
+      <workItem from="1745775756278" duration="4475000" />
+      <workItem from="1745858363684" duration="2825000" />
+      <workItem from="1745936893952" duration="1316000" />
+      <workItem from="1745953360764" duration="2783000" />
+      <workItem from="1746038361266" duration="3102000" />
+      <workItem from="1746077546146" duration="15448000" />
+      <workItem from="1746349760122" duration="7274000" />
+      <workItem from="1746358745161" duration="2000" />
+      <workItem from="1746360053592" duration="744000" />
+      <workItem from="1746429461182" duration="666000" />
+      <workItem from="1746630786822" duration="15000" />
+      <workItem from="1746650969974" duration="2761000" />
+      <workItem from="1746883909662" duration="13893000" />
+      <workItem from="1746964749785" duration="3618000" />
+      <workItem from="1746979186662" duration="6640000" />
+      <workItem from="1747068173399" duration="10159000" />
+      <workItem from="1747082346841" duration="363000" />
+      <workItem from="1747119396083" duration="349000" />
+      <workItem from="1747149658059" duration="8359000" />
+    </task>
+    <task id="LOCAL-00001" summary="Frugally Deep classification with new project layout and graph image preprocessing.">
+      <option name="closed" value="true" />
+      <created>1742682732719</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1742682732719</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Add support for FrugallyDeep sequential and parallel engines&#10;&#10;Introduced two new inference engines: `FrugallyDeepEngineSequential` and `FrugallyDeepEngineParallel`. Updated the EngineFactory registration and inference interfaces to reflect these changes. Expanded preprocessing utilities and benchmarks to handle classification and segmentation tasks.">
+      <option name="closed" value="true" />
+      <created>1743877744185</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1743877744185</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Remove segmentation model">
+      <option name="closed" value="true" />
+      <created>1743878085234</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1743878085234</updated>
+    </task>
+    <task id="LOCAL-00004" summary="blubliblablu">
+      <option name="closed" value="true" />
+      <created>1745688409459</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1745688409459</updated>
+    </task>
+    <task id="LOCAL-00005" summary="blubliblablu">
+      <option name="closed" value="true" />
+      <created>1746099471458</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1746099471458</updated>
+    </task>
+    <task id="LOCAL-00006" summary="blubliblablu">
+      <option name="closed" value="true" />
+      <created>1746360088988</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1746360088988</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Refactor CMake configs and improve exception handling&#10;&#10;Updated LibTorch and Cuda configurations for better flexibility and ensured proper handling of environment variables. Refined exception handling in `EngineRuntimeException` and benchmark error messages for clarity. Also added conditional checks for inference tasks and removed redundant code in benchmarks.">
+      <option name="closed" value="true" />
+      <created>1746962063458</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1746962063458</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Refactor CMake configuration for clarity and standardization&#10;&#10;Standardized log messages, restructured comments, and improved path handling across multiple CMake files to enhance clarity and maintainability. Consolidated dependencies, ensured platform compatibility, and updated .gitignore for broader patterns.">
+      <option name="closed" value="true" />
+      <created>1746974961961</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1746974961961</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Refactor FrugallyDeep engine implementation and add parallel support&#10;&#10;Replaced `FrugallyDeepEngineSequential` with a unified `FrugallyDeepEngine`. Added support for parallel processing using both `std::async` and `std::execution::par_unseq` modes. Refactored benchmarks to handle classification and added utility for confusion matrix generation.">
+      <option name="closed" value="true" />
+      <created>1747119736915</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1747119736915</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VCPKGProject">
+    <isAutomaticCheckingOnLaunch value="false" />
+    <isAutomaticFoundErrors value="true" />
+    <isAutomaticReloadCMake value="true" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="dp-inference" />
+                      </list>
+                    </value>
+                  </entry>
+                  <entry key="roots">
+                    <value>
+                      <list>
+                        <option value="$PROJECT_DIR$" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Frugally Deep classification with new project layout and graph image preprocessing." />
+    <MESSAGE value="Add sequential and parallel engines with segmentation capability&#10;&#10;This commit introduces `FrugallyDeepEngineSequential` and `FrugallyDeepEngineParallel` classes, adding support for sequential and parallel inference. Enhancements include segmentation utilities, preprocessing, and classification postprocessing. Changes also refactor model loading and engine registration for better modularity and functionality." />
+    <MESSAGE value="Add sequential and parallel FrugallyDeep inference engines&#10;&#10;Added `FrugallyDeepEngineSequential` and started the implementation of `FrugallyDeepEngineParallel` for handling single and batch inferences, respectively. Updated benchmarks to support classification and segmentation use cases, introduced utility functions for preprocessing and postprocessing, and integrated OpenCV dependencies. Refactored data loader and inference engine interface for improved modularity." />
+    <MESSAGE value="Add support for FrugallyDeep sequential and parallel engines&#10;&#10;Introduced two new inference engines: `FrugallyDeepEngineSequential` and `FrugallyDeepEngineParallel`. Updated the EngineFactory registration and inference interfaces to reflect these changes. Expanded preprocessing utilities and benchmarks to handle classification and segmentation tasks." />
+    <MESSAGE value="Remove segmentation model" />
+    <MESSAGE value="blubliblablu" />
+    <MESSAGE value="Refactor CMake configs and improve exception handling&#10;&#10;Updated LibTorch and Cuda configurations for better flexibility and ensured proper handling of environment variables. Refined exception handling in `EngineRuntimeException` and benchmark error messages for clarity. Also added conditional checks for inference tasks and removed redundant code in benchmarks." />
+    <MESSAGE value="Refactor CMake configuration for clarity and standardization&#10;&#10;Standardized log messages, restructured comments, and improved path handling across multiple CMake files to enhance clarity and maintainability. Consolidated dependencies, ensured platform compatibility, and updated .gitignore for broader patterns." />
+    <MESSAGE value="Refactor FrugallyDeep engine implementation and add parallel support&#10;&#10;Replaced `FrugallyDeepEngineSequential` with a unified `FrugallyDeepEngine`. Added support for parallel processing using both `std::async` and `std::execution::par_unseq` modes. Refactored benchmarks to handle classification and added utility for confusion matrix generation." />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactor FrugallyDeep engine implementation and add parallel support&#10;&#10;Replaced `FrugallyDeepEngineSequential` with a unified `FrugallyDeepEngine`. Added support for parallel processing using both `std::async` and `std::execution::par_unseq` modes. Refactored benchmarks to handle classification and added utility for confusion matrix generation." />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/engines/tensorrt/TensorRTEngineSequential.cpp</url>
+          <line>29</line>
+          <option name="timeStamp" value="31" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/engines/libtorch/LibTorchEngineSequential.cpp</url>
+          <line>14</line>
+          <option name="timeStamp" value="41" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/benchmarks/DataLoader.cpp</url>
+          <line>14</line>
+          <option name="timeStamp" value="42" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/benchmarks/main.cpp</url>
+          <line>286</line>
+          <option name="timeStamp" value="43" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/benchmarks/main.cpp</url>
+          <line>193</line>
+          <option name="timeStamp" value="44" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="CMakeLineBreakpoint">
+          <url>file://$PROJECT_DIR$/src/engines/abstract/AbstractInferenceEngineConfig.cmake</url>
+          <line>4</line>
+          <option name="timeStamp" value="22" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+    <watches-manager>
+      <configuration name="CMakeListConfigurationType">
+        <watch expression="InferenceTools_SOURCES" />
+      </configuration>
+    </watches-manager>
+  </component>
+</project>

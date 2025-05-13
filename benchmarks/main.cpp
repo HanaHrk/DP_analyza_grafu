@@ -42,7 +42,7 @@ std::string getOutputFilePath(const std::string& outputDir, const std::string& e
     const auto expectedClass = parentFolder.substr(classSlashIndex + 1);
     const auto inferenceTypeSuffix = inferenceType == InferenceType::CLASSIFICATION ? "classification" : "segmentation";
     const auto imageName = inputPath.substr(inputPath.find_last_of("/") + 1);
-    const auto outputFolder = outputDir + "/" + engineName + "/" + inferenceTypeSuffix;
+    const auto outputFolder = outputDir + "/" + engineName + "/" + inferenceTypeSuffix + "/" + expectedClass;
     std::filesystem::create_directories(outputFolder);
     if (inferenceType == InferenceType::CLASSIFICATION)
     {
@@ -87,7 +87,7 @@ void classify(const std::vector<InferPathInput>& inputs,
     std::vector<std::string> trueLabels;
     std::vector<std::string> predictedLabels;
     std::vector<InferPathOutput> outputs;
-
+    uint64_t totalMillis = 0;
     if (parallel)
     {
         std::cout << "Running in parallel mode with FrugallyDeep engine" << std::endl;
@@ -97,7 +97,9 @@ void classify(const std::vector<InferPathInput>& inputs,
                        [](const auto& input) { return input.input; });
 
         std::cout << "Processing " << inputs.size() << " images in parallel" << std::endl;
-        const auto tensorOutputs = frugallyDeepEngine->predictAll(parallelInputs);
+        const auto start = std::chrono::high_resolution_clock::now();
+        const auto tensorOutputs = frugallyDeepEngine->predictAll(parallelInputs, FrugallyDeepEngine::ParallelMode::STD_THREADING);
+        totalMillis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
         for (int i = 0; i < inputs.size(); i++)
         {
             outputs.emplace_back(InferPathOutput{inputs[i].path, tensorOutputs[i]});
@@ -113,7 +115,7 @@ void classify(const std::vector<InferPathInput>& inputs,
         {
             if (debug)
             {
-                const int currentPercentage = static_cast<int>((processedCount + 1) * 100.0 / totalFiles);
+                const auto currentPercentage = static_cast<int>((processedCount + 1) * 100.0 / totalFiles);
                 processedCount++;
                 if (currentPercentage != lastPercentage)
                 {
@@ -121,8 +123,9 @@ void classify(const std::vector<InferPathInput>& inputs,
                     lastPercentage = currentPercentage;
                 }
             }
-
+            const auto start = std::chrono::high_resolution_clock::now();
             const auto outputTensor = engine->predict(input);
+            totalMillis += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
             const auto outputFilePath = getOutputFilePath(outputDir, engineName, InferenceType::CLASSIFICATION, path);
             outputs.emplace_back(InferPathOutput{outputFilePath, outputTensor});
 
@@ -132,8 +135,10 @@ void classify(const std::vector<InferPathInput>& inputs,
                 trueLabels.push_back(getTrueLabel(path));
             }
         }
-        std::cout << std::endl;
     }
+    const auto seconds = static_cast<double>(totalMillis) / 1000.0;
+    std::cout << "Total time: " << seconds << " seconds" << std::endl;
+    std::cout << "Time per image: " << (inputs.size() / seconds) << " images per second" << std::endl;
 
     std::cout << "\nWriting classification results..." << std::endl;
     for (const auto& [path, output] : outputs)
@@ -146,12 +151,14 @@ void classify(const std::vector<InferPathInput>& inputs,
         std::ofstream(path) << outputText << std::flush;
     }
 
-    std::cout << "\nClassification completed" << std::endl;
-    std::cout << "Generating confusion matrix..." << std::endl;
     if (debug)
     {
+        std::cout << "Generating confusion matrix..." << std::endl;
         sample::printConfusionMatrix(predictedLabels, trueLabels);
     }
+    std::cout << "\nClassification completed" << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
 }
 
 std::vector<std::string> argsToVector(const int argv, char** argc)
@@ -184,7 +191,7 @@ void inference(const std::string& inputDir,
             const auto libTorch = isTorch(model);
 
             auto allFilePaths = sample::getAllFiles(inputDir);
-            // TODO for debugging allFilePaths = std::vector(allFilePaths.begin(), allFilePaths.begin() + 100);
+            allFilePaths = std::vector(allFilePaths.begin(), allFilePaths.begin() + 1000);
 
             try
             {
@@ -240,7 +247,7 @@ void handleArgs(const std::vector<std::string>& argsVector)
     const auto inputDir = sample::extractArgsSingle(argsVector, "input_dir");
     const auto classificationModels = sample::extractArgsMulti(argsVector, "classification");
     const auto segmentationModels = sample::extractArgsMulti(argsVector, "segmentation");
-    const auto parallelIfAvailable = sample::extractArgsSimple(argsVector, "try_parallel");
+    const auto parallelIfAvailable = sample::extractArgsSimple(argsVector, "parallel");
     const auto debug = sample::extractArgsSimple(argsVector, "debug");
 
     if (sample::extractArgsSimple(argsVector, "help"))
