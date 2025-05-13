@@ -107,25 +107,7 @@ std::string sample::getRandomFilePath(const std::filesystem::path& folderPath)
         throw std::runtime_error("Folder does not exist");
     }
 
-    std::vector<std::filesystem::path> allFiles;
-    std::function<void(const std::filesystem::path&)> findFiles =
-        [&](const std::filesystem::path& currentPath)
-    {
-        for (const auto& entry : std::filesystem::directory_iterator(currentPath))
-        {
-            if (std::filesystem::is_regular_file(entry.status()))
-            {
-                allFiles.push_back(entry.path());
-            }
-            else if (std::filesystem::is_directory(entry.status()))
-            {
-                findFiles(entry.path());
-            }
-        }
-    };
-
-    findFiles(folderPath);
-
+    const auto allFiles = getAllFiles(folderPath);
     if (allFiles.empty())
     {
         throw std::runtime_error("No files found");
@@ -137,4 +119,37 @@ std::string sample::getRandomFilePath(const std::filesystem::path& folderPath)
     auto absolutePath = std::filesystem::absolute(allFiles[distrib(gen)]).string();
     std::replace(absolutePath.begin(), absolutePath.end(), '\\', '/');
     return absolutePath;
+}
+
+std::vector<InferPathInput> sample::getInferInputs(const std::vector<std::string>& filePaths, const bool normalize,
+                                                   const int inputWidth, const int inputHeight, const int inputChannels, const int outputSize)
+{
+    std::vector<InferPathInput> inputs;
+    inputs.reserve(filePaths.size());
+
+    std::cout << "\nStarting to load " << filePaths.size() << " files..." << std::endl;
+
+    int lastPercentage = -1;
+
+    for (size_t i = 0; i < filePaths.size(); ++i)
+    {
+        const auto& filePath = filePaths[i];
+        const auto currentPercentage = static_cast<int>((i + 1) * 100.0 / filePaths.size());
+
+        if (currentPercentage != lastPercentage)
+        {
+            std::cout << "\rLoading: " << currentPercentage << "%" << std::flush;
+            lastPercentage = currentPercentage;
+        }
+
+        constexpr int IMAGE_SIZE = 224;
+        const auto image = cv::imread(filePath, cv::IMREAD_COLOR);
+        const auto preprocessedImage = preprocessImage(image, IMAGE_SIZE, IMAGE_SIZE, normalize);
+        const auto vector = loadToVector(preprocessedImage, normalize);
+        const auto input = InferInput(vector, inputWidth, inputHeight, inputChannels, outputSize);
+        inputs.emplace_back(InferPathInput{filePath, input});
+    }
+
+    std::cout << "\nLoading completed. " << inputs.size() << " files loaded." << std::endl;
+    return inputs;
 }

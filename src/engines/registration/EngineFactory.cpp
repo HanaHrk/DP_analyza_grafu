@@ -2,7 +2,7 @@
 #include <inferencetools/EngineNotFound.hpp>
 
 #if USE_FRUGALLY_DEEP
-#include <inferencetools/FrugallyDeepEngineSequential.hpp>
+#include <inferencetools/FrugallyDeepEngine.hpp>
 #elif BLA
 #include <inferencetools/TensorRTEngineSequential.hpp>
 #elif USE_LIBTORCH
@@ -39,7 +39,7 @@ void EngineFactory::registerEngine(const std::string& engineName, const EngineBu
 void EngineFactory::registerAllEngines()
 {
 #if USE_FRUGALLY_DEEP
-    registerEngine("FrugallyDeep", [] { return std::make_unique<FrugallyDeepEngineSequential>(); });
+    registerEngine("FrugallyDeep", [] { return std::make_unique<FrugallyDeepEngine>(); });
 #endif
 
 #if BLA

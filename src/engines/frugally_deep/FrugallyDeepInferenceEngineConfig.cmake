@@ -6,7 +6,6 @@ find_package(FrugallyDeep HINTS ${CMAKE_SOURCE_DIR}/third_party/frugally_deep RE
 
 # Create a static library for FrugallyDeep inference engine
 add_library(FrugallyDeepInferenceEngine STATIC
-        ${CMAKE_CURRENT_LIST_DIR}/FrugallyDeepEngineSequential.cpp
         ${CMAKE_CURRENT_LIST_DIR}/FrugallyDeepEngine.cpp
 )
 # Add include directories for public headers

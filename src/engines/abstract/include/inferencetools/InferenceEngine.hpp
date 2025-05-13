@@ -61,3 +61,13 @@ public:
     [[nodiscard]] virtual Tensor predict(const InferInput& input) const = 0;
 
 };
+
+class InferenceEngineParallel
+{
+public:
+    virtual ~InferenceEngineParallel() = default;
+
+    virtual void loadModel(const std::string& enginePath) = 0;
+
+    [[nodiscard]] virtual std::vector<Tensor> predictAll(const std::vector<InferInput>& input) const = 0;
+};
