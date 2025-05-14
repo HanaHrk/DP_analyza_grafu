@@ -44,7 +44,7 @@ target_compile_definitions(EngineRegistrator PUBLIC ${COMPILE_OPTIONS})
 # Add include directories
 target_include_directories(EngineRegistrator PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
 # Link required libraries
-target_link_libraries(EngineRegistrator PUBLIC CV ${ENGINE_LIBRARIES} AbstractInferenceEngine)
+target_link_libraries(EngineRegistrator PUBLIC ${ENGINE_LIBRARIES} AbstractInferenceEngine)
 
 # Print end message for Engine Registrator configuration
 message("----- Engine Registrator End")

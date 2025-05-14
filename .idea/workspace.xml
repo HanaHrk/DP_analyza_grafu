@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="BackendCodeEditorMiscSettings">
-    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="5" type="long" />
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="10" type="long" />
     <option name="/Default/Environment/UserInterface/HierarchyView/ViewStyle/@EntryValue" value="SuperTypes" type="string" />
     <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
     <option name="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue" value="true" type="bool" />
@@ -24,6 +24,7 @@
   <component name="CMakeRunConfigurationManager">
     <generated>
       <config projectName="InferenceBenchmark" targetName="EngineRegistrator" />
+      <config projectName="InferenceBenchmark" targetName="TensorRTInferenceEngine" />
       <config projectName="InferenceBenchmark" targetName="FrugallyDeepInferenceEngine" />
       <config projectName="InferenceBenchmark" targetName="LibTorchInferenceEngine" />
       <config projectName="InferenceBenchmark" targetName="InferenceBenchmark" />
@@ -33,20 +34,34 @@
     <configurations>
       <configuration PROFILE_NAME="Frugally Deep - Release - Windows" ENABLED="true" GENERATION_DIR="cmake-frugally-deep-release-windows" CONFIG_NAME="Release" TOOLCHAIN_NAME="Visual Studio" GENERATION_OPTIONS="-DUSE_FRUGALLY_DEEP=1 -DCV_HOME=&quot;C:\Libs\opencv\build&quot;" />
       <configuration PROFILE_NAME="Frugally Deep - Debug - Windows" ENABLED="true" GENERATION_DIR="cmake-frugally-deep-debug-windows" CONFIG_NAME="Debug" TOOLCHAIN_NAME="Visual Studio" GENERATION_OPTIONS="-DUSE_FRUGALLY_DEEP=1 -DCV_HOME=&quot;C:\Libs\opencv\build&quot;" />
-      <configuration PROFILE_NAME="LibTorch - Release - Windows" ENABLED="true" GENERATION_DIR="cmake-libtorch-release-windows" CONFIG_NAME="Release" TOOLCHAIN_NAME="Visual Studio" GENERATION_OPTIONS="-DUSE_LIBTORCH=1 -DLibTorch_HOME=&quot;C:\Libs\libtorch\share\cmake\Torch&quot; -DCV_HOME=&quot;C:\Libs\opencv\build&quot;" />
-      <configuration PROFILE_NAME="LibTorch - Debug - Windows" ENABLED="true" GENERATION_DIR="cmake-libtorch-debug-windows" CONFIG_NAME="Debug" TOOLCHAIN_NAME="Visual Studio" GENERATION_OPTIONS="-DUSE_LIBTORCH=1 -DLibTorch_HOME=&quot;C:\Libs\libtorch\share\cmake\Torch&quot; -DCV_HOME=&quot;C:\Libs\opencv\build&quot;" />
+      <configuration PROFILE_NAME="LibTorch - Release - Windows" ENABLED="true" GENERATION_DIR="cmake-libtorch-release-windows" CONFIG_NAME="Release" TOOLCHAIN_NAME="Visual Studio" GENERATION_OPTIONS="-DUSE_LIBTORCH=1 -DLibTorch_HOME=&quot;C:\Users\honza\Downloads\libtorch-win-shared-with-deps-2.7.0+cu126\libtorch\share\cmake\Torch&quot; -DCV_HOME=&quot;C:\Code\DP\Libs\OpenCV\opencv\build&quot;" />
+      <configuration PROFILE_NAME="LibTorch - Debug - Windows" ENABLED="true" GENERATION_DIR="cmake-libtorch-debug-windows" CONFIG_NAME="Debug" TOOLCHAIN_NAME="Visual Studio" GENERATION_OPTIONS="-DUSE_LIBTORCH=1 -DLibTorch_HOME=&quot;C:\Users\honza\Downloads\libtorch-win-shared-with-deps-2.7.0+cu126\libtorch\share\cmake\Torch&quot; -DCV_HOME=&quot;C:\Code\DP\Libs\OpenCV\opencv\build&quot;" />
       <configuration PROFILE_NAME="Frugally Deep - Release - Ubuntu" ENABLED="true" GENERATION_DIR="cmake-frugally-deep-release-ubuntu" CONFIG_NAME="Release" TOOLCHAIN_NAME="WSL" GENERATION_OPTIONS="-DUSE_FRUGALLY_DEEP=1 -DCV_HOME=/mnt/c/Libs/ubuntu/opencv-4.11.0/opencv-4.11.0" />
       <configuration PROFILE_NAME="Frugally Deep - Debug - Ubuntu" ENABLED="true" GENERATION_DIR="cmake-frugally-deep-debug-ubuntu" CONFIG_NAME="Debug" TOOLCHAIN_NAME="WSL" GENERATION_OPTIONS="-DUSE_FRUGALLY_DEEP=1 -DCV_HOME=/mnt/c/Libs/ubuntu/opencv-4.11.0/opencv-4.11.0" />
       <configuration PROFILE_NAME="LibTorch - Release - Ubuntu" ENABLED="true" GENERATION_DIR="cmake-libtorch-release-ubuntu" CONFIG_NAME="Release" TOOLCHAIN_NAME="WSL" GENERATION_OPTIONS="-DUSE_LIBTORCH=1 -DLibTorch_HOME=&quot;/mnt/c/Libs/ubuntu/libtorch-cxx11-abi-shared-with-deps-2.7.0+cu126/libtorch/share/cmake/Torch&quot; -DCUDAToolkit_HOME=&quot;/usr/local/cuda&quot;" />
       <configuration PROFILE_NAME="LibTorch - Debug - Ubuntu" ENABLED="true" GENERATION_DIR="cmake-libtorch-debug-ubuntu" CONFIG_NAME="Debug" TOOLCHAIN_NAME="WSL" GENERATION_OPTIONS="-DUSE_LIBTORCH=1 -DLibTorch_HOME=&quot;/mnt/c/Libs/ubuntu/libtorch-cxx11-abi-shared-with-deps-2.7.0+cu126/libtorch/share/cmake/Torch&quot; -DCUDAToolkit_HOME=&quot;/usr/local/cuda&quot;" />
+      <configuration PROFILE_NAME="TensorRT - Release - Windows" ENABLED="true" GENERATION_DIR="cmake-tensorrt-release-windows" CONFIG_NAME="Release" TOOLCHAIN_NAME="Visual Studio" GENERATION_OPTIONS="-DBLA=1 -DTensor_HOME=&quot;C:\Code\DP\Libs\TensorRT-10.10.0.31.Windows.win10.cuda-12.9\TensorRT-10.10.0.31&quot; -DCV_HOME=&quot;C:\Code\DP\Libs\OpenCV\opencv\build&quot; -DOnnxRuntime_HOME=&quot;C:\Code\DP\Libs\onnxruntime&quot;" />
     </configurations>
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a59b2749-0e4a-4c23-a686-25b59a77b589" name="Changes" comment="Refactor FrugallyDeep engine implementation and add parallel support&#10;&#10;Replaced `FrugallyDeepEngineSequential` with a unified `FrugallyDeepEngine`. Added support for parallel processing using both `std::async` and `std::execution::par_unseq` modes. Refactored benchmarks to handle classification and added utility for confusion matrix generation.">
-      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/eigen/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/eigen/debug/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/eigen/debug/lldb/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gitmodules" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/COMPILE.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/INSTALL.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/third_party/NVTX" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/FunctionalPlus" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/eigen" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/frugally-deep" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/include/ClassificationUtils.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/include/ClassificationUtils.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/benchmarks/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/engines/abstract/AbstractInferenceEngineConfig.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/src/engines/abstract/AbstractInferenceEngineConfig.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/engines/abstract/include/inferencetools/InferenceEngine.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/engines/abstract/include/inferencetools/InferenceEngine.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/engines/registration/EngineRegistratorConfig.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/src/engines/registration/EngineRegistratorConfig.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/engines/registration/include/inferencetools/EngineFactory.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/engines/registration/include/inferencetools/EngineFactory.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/third_party/libtorch/LibTorchConfig.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/third_party/libtorch/LibTorchConfig.cmake" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,7 +71,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Frugally Deep - Release - Windows" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:LibTorch - Release - Windows" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -81,7 +96,7 @@
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/HanaHrk/DP_analyza_grafu.git&quot;,
-    &quot;accountId&quot;: &quot;f194c3aa-b482-408e-a20f-d0d71fbc8e1a&quot;
+    &quot;accountId&quot;: &quot;0ea818d9-a071-4f6d-baa4-71f1ffc24d39&quot;
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
@@ -128,44 +143,44 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "CMake Application.InferenceBenchmark - Ubuntu.executor": "Run",
-    "CMake Application.InferenceBenchmark - Windows.executor": "Debug",
-    "CMake Application.InferenceBenchmark.executor": "Run",
-    "CMake Application.Json.executor": "Run",
-    "CMake Application.ONNX.executor": "Run",
-    "CMake Debug.Debug.executor": "Debug",
-    "CMake Debug.InferenceBenchmark.executor": "Debug",
-    "RunOnceActivity.RadMigrateCodeStyle": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "RunOnceActivity.west.config.association.type.startup.service": "true",
-    "SONARLINT_PRECOMMIT_ANALYSIS": "true",
-    "cf.advertisement.text.has.clang-format": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "dp-inference",
-    "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "C:/~Lokalni data/School/DP/DP_analyza_grafu/tensor-rt-debug",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "CMakeSettings",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;CMake Application.InferenceBenchmark - Ubuntu.executor&quot;: &quot;Run&quot;,
+    &quot;CMake Application.InferenceBenchmark - Windows.executor&quot;: &quot;Run&quot;,
+    &quot;CMake Application.InferenceBenchmark.executor&quot;: &quot;Run&quot;,
+    &quot;CMake Application.Json.executor&quot;: &quot;Run&quot;,
+    &quot;CMake Application.ONNX.executor&quot;: &quot;Run&quot;,
+    &quot;CMake Debug.Debug.executor&quot;: &quot;Debug&quot;,
+    &quot;CMake Debug.InferenceBenchmark.executor&quot;: &quot;Debug&quot;,
+    &quot;RunOnceActivity.RadMigrateCodeStyle&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.west.config.association.type.startup.service&quot;: &quot;true&quot;,
+    &quot;SONARLINT_PRECOMMIT_ANALYSIS&quot;: &quot;true&quot;,
+    &quot;cf.advertisement.text.has.clang-format&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;dp-inference&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Code/DP/C++/DP_analyza_grafu/models&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;CMakeSettings&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Code\DP\C++\DP_analyza_grafu\models" />
+      <recent name="C:\Code\DP\C++\DP_analyza_grafu\third_party" />
       <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\tensor-rt-debug" />
       <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\models" />
       <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\libtorch-debug" />
-      <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\src\engines\libtorch\include\inferencetools\exception" />
-      <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\src\engines\frugally_deep\include\inferencetools" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\~Lokalni data\School\DP\DP_analyza_grafu\models" />
@@ -176,20 +191,15 @@
     </key>
   </component>
   <component name="RunManager" selected="CMake Application.InferenceBenchmark - Windows">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="Debug" type="CMakeListConfigurationType" factoryName="CMakeListConfigurationFactory">
       <method v="2" />
     </configuration>
-    <configuration name="EngineRegistrator" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="InferenceBenchmark" TARGET_NAME="EngineRegistrator" CONFIG_NAME="Frugally Deep - Debug - Windows">
+    <configuration name="EngineRegistrator" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="InferenceBenchmark" TARGET_NAME="EngineRegistrator" CONFIG_NAME="Frugally Deep - Release - Windows">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="FrugallyDeepInferenceEngine" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="InferenceBenchmark" TARGET_NAME="FrugallyDeepInferenceEngine" CONFIG_NAME="Frugally Deep - Debug - Windows">
+    <configuration name="FrugallyDeepInferenceEngine" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="InferenceBenchmark" TARGET_NAME="FrugallyDeepInferenceEngine" CONFIG_NAME="Frugally Deep - Release - Windows">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -199,7 +209,7 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="InferenceBenchmark - Windows" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="--output_dir=$PROJECT_DIR$/../../../../data/out &quot;--input_dir=C:\Users\jan.kubala\Downloads\train-20250513T165911Z-1-001\train&quot; &quot;--classification=$PROJECT_DIR$/models/classification.json&quot; &quot;--classification=C:\~Lokalni data\School\DP\DP_analyza_grafu\models\classification.pt&quot;" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="InferenceBenchmark" TARGET_NAME="InferenceBenchmark" CONFIG_NAME="Frugally Deep - Release - Windows" RUN_TARGET_PROJECT_NAME="InferenceBenchmark" RUN_TARGET_NAME="InferenceBenchmark">
+    <configuration name="InferenceBenchmark - Windows" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="--output_dir=C:\Code\DP\Data\Out &quot;--input_dir=C:\Users\honza\Downloads\train-20250513T192827Z-1-001\train&quot; &quot;--classification=C:\Code\DP\C++\DP_analyza_grafu\models\classification.json&quot; &quot;--classification=C:\Code\DP\C++\DP_analyza_grafu\models\classification.onnx&quot; &quot;--classification=C:\Code\DP\C++\DP_analyza_grafu\models\classification.pt&quot;" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="InferenceBenchmark" TARGET_NAME="InferenceBenchmark" CONFIG_NAME="Frugally Deep - Release - Windows" RUN_TARGET_PROJECT_NAME="InferenceBenchmark" RUN_TARGET_NAME="InferenceBenchmark">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -209,12 +219,23 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
+    <configuration name="TensorRTInferenceEngine" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="InferenceBenchmark" TARGET_NAME="TensorRTInferenceEngine" CONFIG_NAME="TensorRT - Release - Windows">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
     <list>
       <item itemvalue="CMake Application.InferenceBenchmark - Ubuntu" />
       <item itemvalue="CMake Application.InferenceBenchmark - Windows" />
-      <item itemvalue="CMake Application.EngineRegistrator" />
       <item itemvalue="CMake Application.FrugallyDeepInferenceEngine" />
       <item itemvalue="CMake Application.LibTorchInferenceEngine" />
+      <item itemvalue="CMake Application.EngineRegistrator" />
+      <item itemvalue="CMake Application.TensorRTInferenceEngine" />
       <item itemvalue="CMake Debug.Debug" />
     </list>
   </component>
@@ -318,6 +339,10 @@
       <workItem from="1747082346841" duration="363000" />
       <workItem from="1747119396083" duration="349000" />
       <workItem from="1747149658059" duration="8359000" />
+      <workItem from="1747237546545" duration="2356000" />
+      <workItem from="1747239933786" duration="758000" />
+      <workItem from="1747243120869" duration="3624000" />
+      <workItem from="1747247400688" duration="2154000" />
     </task>
     <task id="LOCAL-00001" summary="Frugally Deep classification with new project layout and graph image preprocessing.">
       <option name="closed" value="true" />
@@ -464,18 +489,23 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/benchmarks/main.cpp</url>
-          <line>286</line>
+          <line>300</line>
           <option name="timeStamp" value="43" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/benchmarks/main.cpp</url>
-          <line>193</line>
+          <line>203</line>
           <option name="timeStamp" value="44" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="CMakeLineBreakpoint">
-          <url>file://$PROJECT_DIR$/src/engines/abstract/AbstractInferenceEngineConfig.cmake</url>
-          <line>4</line>
-          <option name="timeStamp" value="22" />
+          <url>file://$USER_HOME$/Downloads/libtorch-win-shared-with-deps-2.7.0+cu126/libtorch/share/cmake/Caffe2/public/cuda.cmake</url>
+          <line>178</line>
+          <option name="timeStamp" value="46" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="CMakeLineBreakpoint">
+          <url>file://$USER_HOME$/Downloads/libtorch-win-shared-with-deps-2.7.0+cu126/libtorch/share/cmake/Caffe2/public/cuda.cmake</url>
+          <line>172</line>
+          <option name="timeStamp" value="47" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

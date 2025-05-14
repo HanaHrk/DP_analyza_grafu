@@ -3,8 +3,6 @@
 #include <vector>
 #include <string>
 
-#include <opencv2/opencv.hpp>
-
 using Tensor = std::vector<float>;
 
 constexpr std::size_t MODEL_PROPERTIES = 0;

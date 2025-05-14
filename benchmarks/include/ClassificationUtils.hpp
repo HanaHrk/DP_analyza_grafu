@@ -1,5 +1,9 @@
 #pragma once
 #include <string>
+#include <map>
+#include <sstream>
+#include <iostream>
+#include <iomanip>
 #include <inferencetools/InferenceEngine.hpp>
 
 namespace sample

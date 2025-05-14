@@ -19,8 +19,6 @@ message("--- Abstract Engine Start ---")
 
 # Create interface library for abstract inference engine
 add_library(AbstractInferenceEngine INTERFACE)
-# Link with CV library
-target_link_libraries(AbstractInferenceEngine INTERFACE CV)
 
 # Add include directories for the interface
 target_include_directories(AbstractInferenceEngine INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)

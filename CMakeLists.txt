@@ -40,20 +40,18 @@ set(LIBRARY InferenceTools)
 add_library(${LIBRARY} INTERFACE)
 target_include_directories(${LIBRARY} INTERFACE ${InferenceTools_INCLUDES})
 
-# Find and link OpenCV package
-find_package(CV HINTS ${CMAKE_SOURCE_DIR}/third_party/opencv REQUIRED)
-target_link_libraries(${LIBRARY} INTERFACE CV)
-
 # Find and link EngineRegistrator package
 find_package(EngineRegistrator HINTS src/engines/registration REQUIRED)
 target_link_libraries(${LIBRARY} INTERFACE EngineRegistrator)
 
 # Conditionally build the sample benchmark application
 if (RUN_SAMPLE)
+    # Find and link OpenCV package
+    find_package(CV HINTS ${CMAKE_SOURCE_DIR}/third_party/opencv REQUIRED)
     # Create executable from source files
     add_executable(${SAMPLE_APPLICATION} ${InferenceBenchmark_SOURCES})
     # Add include directories
     target_include_directories(${SAMPLE_APPLICATION} PRIVATE ${InferenceBenchmark_INCLUDES})
     # Link against the inference tools library
-    target_link_libraries(${SAMPLE_APPLICATION} PRIVATE ${LIBRARY})
+    target_link_libraries(${SAMPLE_APPLICATION} PRIVATE CV ${LIBRARY})
 endif ()

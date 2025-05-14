@@ -18,7 +18,7 @@ if (DEFINED LibTorch_HOME)
 endif ()
 
 # Find and load the Torch package
-find_package(Torch REQUIRED)
+find_package(Torch CONFIG REQUIRED)
 
 # Set LibTorch include directories if not already defined
 if (NOT DEFINED LibTorch_INCLUDES)

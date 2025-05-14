@@ -10,7 +10,10 @@
 #include "ClassificationUtils.hpp"
 #include "DataLoader.hpp"
 #include "inferencetools/EngineNotFound.hpp"
+
+#ifdef USE_FRUGALLY_DEEP
 #include "inferencetools/FrugallyDeepEngine.hpp"
+#endif
 
 
 bool isTorch(const std::string_view& name)
@@ -35,7 +38,8 @@ std::string getTrueLabel(const std::string& inputPath)
     return parentFolder.substr(classSlashIndex + 1);
 }
 
-std::string getOutputFilePath(const std::string& outputDir, const std::string& engineName, const InferenceType& inferenceType, const std::string& inputPath)
+std::string getOutputFilePath(const std::string& outputDir, const std::string& engineName,
+                              const InferenceType& inferenceType, const std::string& inputPath)
 {
     const auto parentFolder = inputPath.substr(0, inputPath.find_last_of("/"));
     const auto classSlashIndex = parentFolder.find_last_of("/");
@@ -90,6 +94,8 @@ void classify(const std::vector<InferPathInput>& inputs,
     uint64_t totalMillis = 0;
     if (parallel)
     {
+#ifdef USE_FRUGALLY_DEEP
+
         std::cout << "Running in parallel mode with FrugallyDeep engine" << std::endl;
         const auto frugallyDeepEngine = dynamic_cast<const FrugallyDeepEngine*>(engine);
         std::vector<InferInput> parallelInputs;
@@ -104,6 +110,9 @@ void classify(const std::vector<InferPathInput>& inputs,
         {
             outputs.emplace_back(InferPathOutput{inputs[i].path, tensorOutputs[i]});
         }
+#else
+        std::cerr << "WARN: FrugallyDeep engine not available. Please compile with USE_FRUGALLY_DEEP=1" << std::endl;
+#endif
     }
     else
     {
@@ -125,7 +134,8 @@ void classify(const std::vector<InferPathInput>& inputs,
             }
             const auto start = std::chrono::high_resolution_clock::now();
             const auto outputTensor = engine->predict(input);
-            totalMillis += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
+            totalMillis += std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::high_resolution_clock::now() - start).count();
             const auto outputFilePath = getOutputFilePath(outputDir, engineName, InferenceType::CLASSIFICATION, path);
             outputs.emplace_back(InferPathOutput{outputFilePath, outputTensor});
 
@@ -201,11 +211,14 @@ void inference(const std::string& inputDir,
                 engine->loadModel(model);
                 std::cout << "Preparing inference inputs..." << std::endl;
                 std::cout << "Scanning input directory..." << std::endl;
-                const auto allInferenceInputs = sample::getInferInputs(allFilePaths, libTorch, MODEL_PROPERTIES, MODEL_PROPERTIES, MODEL_PROPERTIES, MODEL_PROPERTIES);
+                const auto allInferenceInputs = sample::getInferInputs(allFilePaths, libTorch, MODEL_PROPERTIES,
+                                                                       MODEL_PROPERTIES, MODEL_PROPERTIES,
+                                                                       MODEL_PROPERTIES);
 
                 if (inferenceType == InferenceType::CLASSIFICATION)
                 {
-                    classify(allInferenceInputs, engine.get(), engineName, outputDir, parallel && isFrugally(engineName), debug);
+                    classify(allInferenceInputs, engine.get(), engineName, outputDir,
+                             parallel && isFrugally(engineName), debug);
                 }
                 else
                 {
@@ -218,7 +231,8 @@ void inference(const std::string& inputDir,
             }
             catch (const std::exception& e)
             {
-                std::cerr << "ERROR: Exception occurred while processing with " << engineName << ": " << e.what() << std::endl;
+                std::cerr << "ERROR: Exception occurred while processing with " << engineName << ": " << e.what() <<
+                    std::endl;
             }
         }
     }
@@ -284,7 +298,8 @@ void handleArgs(const std::vector<std::string>& argsVector)
         << "- Classification models: " << (classificationModels ? classificationModels.value().size() : 0) << std::endl
         << "- Segmentation models: " << (segmentationModels ? segmentationModels.value().size() : 0) << std::endl;
 
-    inference(inputDir.value(), outputDir.value(), classificationModels.value(), InferenceType::CLASSIFICATION, parallelIfAvailable, debug);
+    inference(inputDir.value(), outputDir.value(), classificationModels.value(), InferenceType::CLASSIFICATION,
+              parallelIfAvailable, debug);
 }
 
 int main(const int argv, char** argc)

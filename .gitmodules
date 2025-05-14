@@ -1,0 +1,15 @@
+[submodule "third_party/frugally_deep/frugally-deep"]
+	path = third_party/frugally_deep/frugally-deep
+	url = https://github.com/Dobiasd/frugally-deep.git
+[submodule "third_party/frugally_deep/FunctionalPlus"]
+	path = third_party/frugally_deep/FunctionalPlus
+	url = https://github.com/Dobiasd/FunctionalPlus.git
+[submodule "third_party/frugally_deep/eigen"]
+	path = third_party/frugally_deep/eigen
+	url = https://gitlab.com/libeigen/eigen.git
+[submodule "third_party/frugally_deep/json"]
+	path = third_party/frugally_deep/json
+	url = https://github.com/nlohmann/json.git
+[submodule "third_party/NVTX"]
+	path = third_party/NVTX
+	url = https://github.com/NVIDIA/NVTX.git
