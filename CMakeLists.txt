@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Optional features that can be enabled/disabled during configuration
 option(USE_FRUGALLY_DEEP "Enable Frugally-Deep" OFF)
-option(BLA "Enable Tensor" OFF)
+option(USE_TENSOR_RT "Enable Tensor" OFF)
 option(USE_LIBTORCH "Enable LibTorch" OFF)
 
 # Option to enable/disable sample benchmark execution

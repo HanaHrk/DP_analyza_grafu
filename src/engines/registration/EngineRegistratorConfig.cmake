@@ -19,7 +19,7 @@ if (USE_FRUGALLY_DEEP)
 endif ()
 
 # Conditional build configuration for TensorRT engine
-if (BLA)
+if (USE_TENSOR_RT)
     # Find and include TensorRTInferenceEngine package
     find_package(TensorRTInferenceEngine HINTS ${CMAKE_SOURCE_DIR}/src/engines/tensorrt REQUIRED)
     # Add compiler definition to enable TensorRT
