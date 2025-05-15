@@ -55,7 +55,7 @@ Adresář `Vysledky` obsahuje:
 *  `confusion_matrix.png`: Matici záměň pro model klasifikace ve formátu PNG
 *  `keras_classification.ipynb`: Soubor kódu a výsledků pro trénování klasifikačního s segmentačního modelu v Google Colab
 *  `segmentation_modelarchitecutre.png`: Strukturu naučeného segmentačního modelu ve formátu PNG
-*  `a`: Výstup a měření metrik z aplikace NSIGHT SYSTEMS
+*  `report3.nsys-rep`: Výstup a měření metrik z aplikace NSIGHT SYSTEMS
 
 ## Sestavení programu
 
