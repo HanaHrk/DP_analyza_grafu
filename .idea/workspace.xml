@@ -24,7 +24,6 @@
   <component name="CMakeRunConfigurationManager">
     <generated>
       <config projectName="InferenceBenchmark" targetName="EngineRegistrator" />
-      <config projectName="InferenceBenchmark" targetName="TensorRTInferenceEngine" />
       <config projectName="InferenceBenchmark" targetName="FrugallyDeepInferenceEngine" />
       <config projectName="InferenceBenchmark" targetName="LibTorchInferenceEngine" />
       <config projectName="InferenceBenchmark" targetName="InferenceBenchmark" />
@@ -45,23 +44,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a59b2749-0e4a-4c23-a686-25b59a77b589" name="Changes" comment="Refactor FrugallyDeep engine implementation and add parallel support&#10;&#10;Replaced `FrugallyDeepEngineSequential` with a unified `FrugallyDeepEngine`. Added support for parallel processing using both `std::async` and `std::execution::par_unseq` modes. Refactored benchmarks to handle classification and added utility for confusion matrix generation.">
-      <change afterPath="$PROJECT_DIR$/.gitmodules" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/COMPILE.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/INSTALL.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/third_party/NVTX" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/FunctionalPlus" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/eigen" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/frugally-deep" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/eigen/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/eigen/debug/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/third_party/frugally_deep/eigen/debug/lldb/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/include/Benchmarker.hpp" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/benchmarks/include/ClassificationUtils.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/include/ClassificationUtils.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/benchmarks/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/engines/abstract/AbstractInferenceEngineConfig.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/src/engines/abstract/AbstractInferenceEngineConfig.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/include/ImageFormatException.h" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/include/ImageFormatException.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/include/SegmentationUtils.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/include/SegmentationUtils.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/engines/abstract/include/inferencetools/InferenceEngine.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/engines/abstract/include/inferencetools/InferenceEngine.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/engines/registration/EngineRegistratorConfig.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/src/engines/registration/EngineRegistratorConfig.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/engines/abstract/include/inferencetools/exception/EngineRuntimeException.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/engines/abstract/include/inferencetools/exception/EngineRuntimeException.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/engines/frugally_deep/include/inferencetools/FrugallyDeepEngine.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/engines/frugally_deep/include/inferencetools/FrugallyDeepEngine.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/engines/libtorch/include/inferencetools/LibTorchEngineSequential.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/engines/libtorch/include/inferencetools/LibTorchEngineSequential.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/engines/registration/include/inferencetools/EngineFactory.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/engines/registration/include/inferencetools/EngineFactory.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/third_party/libtorch/LibTorchConfig.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/third_party/libtorch/LibTorchConfig.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/third_party/frugally_deep/FunctionalPlus" beforeDir="false" afterPath="$PROJECT_DIR$/third_party/frugally_deep/FunctionalPlus" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/third_party/frugally_deep/eigen" beforeDir="false" afterPath="$PROJECT_DIR$/third_party/frugally_deep/eigen" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/third_party/frugally_deep/frugally-deep" beforeDir="false" afterPath="$PROJECT_DIR$/third_party/frugally_deep/frugally-deep" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/third_party/frugally_deep/json" beforeDir="false" afterPath="$PROJECT_DIR$/third_party/frugally_deep/json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,7 +70,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:LibTorch - Release - Windows" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Frugally Deep - Release - Windows" />
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
@@ -219,11 +218,6 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="TensorRTInferenceEngine" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="InferenceBenchmark" TARGET_NAME="TensorRTInferenceEngine" CONFIG_NAME="TensorRT - Release - Windows">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
     <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -235,7 +229,6 @@
       <item itemvalue="CMake Application.FrugallyDeepInferenceEngine" />
       <item itemvalue="CMake Application.LibTorchInferenceEngine" />
       <item itemvalue="CMake Application.EngineRegistrator" />
-      <item itemvalue="CMake Application.TensorRTInferenceEngine" />
       <item itemvalue="CMake Debug.Debug" />
     </list>
   </component>
