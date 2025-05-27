@@ -79,6 +79,85 @@ std::vector<std::string> getEngineName(const std::string& modelPath)
     return {};
 }
 
+void segment(const std::vector<InferPathInput>& inputs,
+             const InferenceEngineSequential* engine,
+             const std::string& engineName,
+             const std::string& outputDir,
+             const bool parallel,
+             const bool debug)
+{
+    std::cout << "\nStarting segmentation with " << engineName << " engine" << std::endl;
+    std::vector<InferPathOutput> outputs;
+    uint64_t totalMillis = 0;
+    if (parallel)
+    {
+#ifdef USE_FRUGALLY_DEEP
+
+        std::cout << "Running in parallel mode with FrugallyDeep engine" << std::endl;
+        const auto frugallyDeepEngine = dynamic_cast<const FrugallyDeepEngine*>(engine);
+        std::vector<InferInput> parallelInputs;
+        std::transform(inputs.begin(), inputs.end(), std::back_inserter(parallelInputs),
+                       [](const auto& input) { return input.input; });
+
+        std::cout << "Processing " << inputs.size() << " images in parallel" << std::endl;
+        const auto start = std::chrono::high_resolution_clock::now();
+        const auto tensorOutputs = frugallyDeepEngine->predictAll(parallelInputs, FrugallyDeepEngine::ParallelMode::STD_THREADING);
+        totalMillis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
+        for (int i = 0; i < inputs.size(); i++)
+        {
+            const auto outputFilePath = getOutputFilePath(outputDir, engineName, InferenceType::SEGMENTATION, inputs[i].path);
+            outputs.emplace_back(InferPathOutput{outputFilePath, tensorOutputs[i]});
+        }
+#else
+        std::cerr << "WARN: FrugallyDeep engine not available. Please compile with USE_FRUGALLY_DEEP=1" << std::endl;
+#endif
+    }
+    else
+    {
+        std::cout << "Running in sequential mode" << std::endl;
+        int lastPercentage = -1;
+        int processedCount = 0;
+        const int totalFiles = inputs.size();
+        for (const auto& [path, input] : inputs)
+        {
+            if (debug)
+            {
+                const auto currentPercentage = static_cast<int>((processedCount + 1) * 100.0 / totalFiles);
+                processedCount++;
+                if (currentPercentage != lastPercentage)
+                {
+                    std::cout << "Progress: " << currentPercentage << "%" << std::endl;
+                    lastPercentage = currentPercentage;
+                }
+            }
+            const auto start = std::chrono::high_resolution_clock::now();
+            const auto outputTensor = engine->predict(input);
+            totalMillis += std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::high_resolution_clock::now() - start).count();
+            const auto outputFilePath = getOutputFilePath(outputDir, engineName, InferenceType::SEGMENTATION, path);
+            outputs.emplace_back(InferPathOutput{outputFilePath, outputTensor});
+        }
+    }
+    const auto seconds = static_cast<double>(totalMillis) / 1000.0;
+    std::cout << "Total time: " << seconds << " seconds" << std::endl;
+    std::cout << "Time per image: " << (inputs.size() / seconds) << " images per second" << std::endl;
+
+    std::cout << "\nWriting classification results..." << std::endl;
+    for (const auto& [path, output] : outputs)
+    {
+        if (debug)
+        {
+            std::cout << "Writing output to: " << path << std::endl;
+        }
+        const auto outputText = sample::postProcessSegmentation(output);
+        cv::imwrite(path, outputText);
+    }
+
+    std::cout << "\nSegmentation completed" << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+}
+
 void classify(const std::vector<InferPathInput>& inputs,
               const InferenceEngineSequential* engine,
               const std::string& engineName,
@@ -201,7 +280,7 @@ void inference(const std::string& inputDir,
             const auto libTorch = isTorch(model);
 
             auto allFilePaths = sample::getAllFiles(inputDir);
-            allFilePaths = std::vector(allFilePaths.begin(), allFilePaths.begin() + 1000);
+            allFilePaths = std::vector(allFilePaths.begin(), allFilePaths.begin() + 10);
 
             try
             {
@@ -211,18 +290,18 @@ void inference(const std::string& inputDir,
                 engine->loadModel(model);
                 std::cout << "Preparing inference inputs..." << std::endl;
                 std::cout << "Scanning input directory..." << std::endl;
-                const auto allInferenceInputs = sample::getInferInputs(allFilePaths, libTorch, MODEL_PROPERTIES,
-                                                                       MODEL_PROPERTIES, MODEL_PROPERTIES,
-                                                                       MODEL_PROPERTIES);
 
                 if (inferenceType == InferenceType::CLASSIFICATION)
                 {
-                    classify(allInferenceInputs, engine.get(), engineName, outputDir,
-                             parallel && isFrugally(engineName), debug);
+                    const auto allInferenceInputs = sample::getInferInputs(allFilePaths, libTorch, MODEL_PROPERTIES,
+                                                                           MODEL_PROPERTIES, MODEL_PROPERTIES,
+                                                                           MODEL_PROPERTIES);
+                    classify(allInferenceInputs, engine.get(), engineName, outputDir, parallel && isFrugally(engineName), debug);
                 }
                 else
                 {
-                    std::cout << "Segmentation not implemented yet" << std::endl;
+                    const auto allInferenceInputs = sample::getInferInputs(allFilePaths, libTorch, 224, 224, 3, 224 * 224 * 1);
+                    segment(allInferenceInputs, engine.get(), engineName, outputDir, parallel && isFrugally(engineName), debug);
                 }
             }
             catch (const EngineNotFound& e)
@@ -298,8 +377,14 @@ void handleArgs(const std::vector<std::string>& argsVector)
         << "- Classification models: " << (classificationModels ? classificationModels.value().size() : 0) << std::endl
         << "- Segmentation models: " << (segmentationModels ? segmentationModels.value().size() : 0) << std::endl;
 
-    inference(inputDir.value(), outputDir.value(), classificationModels.value(), InferenceType::CLASSIFICATION,
-              parallelIfAvailable, debug);
+    if (classificationModels)
+    {
+        inference(inputDir.value(), outputDir.value(), classificationModels.value(), InferenceType::CLASSIFICATION, parallelIfAvailable, debug);
+    }
+    if (segmentationModels)
+    {
+        inference(inputDir.value(), outputDir.value(), segmentationModels.value(), InferenceType::SEGMENTATION, parallelIfAvailable, debug);
+    }
 }
 
 int main(const int argv, char** argc)
