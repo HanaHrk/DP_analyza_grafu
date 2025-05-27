@@ -187,7 +187,8 @@ void classify(const std::vector<InferPathInput>& inputs,
         totalMillis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
         for (int i = 0; i < inputs.size(); i++)
         {
-            outputs.emplace_back(InferPathOutput{inputs[i].path, tensorOutputs[i]});
+            const auto outputPath = getOutputFilePath(outputDir, engineName, InferenceType::CLASSIFICATION, inputs[i].path);
+            outputs.emplace_back(InferPathOutput{outputPath, tensorOutputs[i]});
         }
 #else
         std::cerr << "WARN: FrugallyDeep engine not available. Please compile with USE_FRUGALLY_DEEP=1" << std::endl;

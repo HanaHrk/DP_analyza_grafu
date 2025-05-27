@@ -144,6 +144,11 @@ std::vector<InferPathInput> sample::getInferInputs(const std::vector<std::string
 
         constexpr int IMAGE_SIZE = 224;
         const auto image = cv::imread(filePath, cv::IMREAD_COLOR);
+        if (image.empty())
+        {
+            std::cerr << "Image " << filePath << " could not be loaded." << std::endl;
+            exit(1);
+        }
         const auto preprocessedImage = preprocessImage(image, IMAGE_SIZE, IMAGE_SIZE, normalize);
         const auto vector = loadToVector(preprocessedImage, normalize);
         const auto input = InferInput(vector, inputWidth, inputHeight, inputChannels, outputSize);
