@@ -37,9 +37,25 @@ Detailní struktura adresáře `Aplikace_a_knihovny`:
     * `third_party/tensorrt`: Konfigurace pro nalezení TensorRT.
 * `benchmarks`: Obsahuje zdrojové kódy hlavní spustitelné aplikace pro benchmarking a spouštění inference (`main.cpp`, `ArgsParser.cpp`, `DataLoader.cpp`, `ClassificationUtils.cpp`, `SegmentationUtils.cpp`).
 * `build`: Adresář pro sestavení (generovaný CMake).
-* `lib`: Adresář pro zkopírované dynamické knihovny (DLL/so), pokud je vyžadováno (zejména pro MSVC).
-* `models`: Doporučený adresář pro umístění natrénovaných modelů (.h5, .onnx, .pt).
-* `data`: Doporučený adresář pro umístění vstupních dat (obrázků), typicky rozdělený dle tříd pro klasifikaci.
+
+
+Adresář `Poster` obsahuje:
+*  `Hrkalova_Hana_2025.pdf`: Poster ve formátu PDF
+*  `Hrkalova_Hana_2025.pub`: Poster ve formátu pub
+
+Adresář `Text_prace` obsahuje:
+*  `source_latex.zip`: Všechny "zdrojové" soubory, tj. .tex, .docx, .png
+*  `Hrkalova_A22N0076P.pdf`: Výsledný PDF soubor
+
+Adresář `Vstupni_data` obsahuje:
+*  `graphs_extended.zip`: Adresáře s modely klasifikace a segmentace, které knihovna podporuje pro spuštění inference
+*  `models.7z`: Adresáře obsahující grafy jako vstupní data dělené na adresář s obrázky (JPG) a anotacemi (XML a JSON). Vnitřní dělení je upořádáno podle tříd (typů grafu)
+
+Adresář `Vysledky` obsahuje:
+*  `confusion_matrix.png`: Matici záměň pro model klasifikace ve formátu PNG
+*  `keras_classification.ipynb`: Soubor kódu a výsledků pro trénování klasifikačního s segmentačního modelu v Google Colab
+*  `segmentation_modelarchitecutre.png`: Strukturu naučeného segmentačního modelu ve formátu PNG
+*  `report3.nsys-rep`: Výstup a měření metrik z aplikace NSIGHT SYSTEMS
 
 ## Sestavení programu
 
