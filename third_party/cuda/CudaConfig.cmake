@@ -20,11 +20,14 @@ if (NOT CUDAToolkit_FOUND)
     find_package(CUDAToolkit HINTS ${CUDAToolkit_HOME} REQUIRED)
 endif ()
 
-# Create an interface library named 'Cuda'
-# Interface libraries are header-only libraries that just specify dependencies
-add_library(Cuda INTERFACE)
+find_package(Cuda)
+if (NOT Cuda_FOUND)
+    # Create an interface library named 'Cuda'
+    # Interface libraries are header-only libraries that just specify dependencies
+    add_library(Cuda INTERFACE)
 
-# Link CUDA Runtime library and other CUDA libraries to our interface library
-target_link_libraries(Cuda INTERFACE CUDA::cudart ${CUDA_LIBRARIES})
+    # Link CUDA Runtime library and other CUDA libraries to our interface library
+    target_link_libraries(Cuda INTERFACE CUDA::cudart ${CUDA_LIBRARIES})
+endif ()
 
 message("----- CUDA Searching End")

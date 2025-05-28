@@ -3,9 +3,13 @@
 
 #if USE_FRUGALLY_DEEP
 #include <inferencetools/FrugallyDeepEngine.hpp>
-#elif USE_TENSOR_RT
+#endif
+
+#if USE_TENSOR_RT
 #include <inferencetools/TensorRTEngineSequential.hpp>
-#elif USE_LIBTORCH
+#endif
+
+#if USE_LIBTORCH
 #include <inferencetools/LibTorchEngineSequential.hpp>
 #endif
 

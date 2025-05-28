@@ -23,7 +23,7 @@ if (USE_TENSOR_RT)
     # Find and include TensorRTInferenceEngine package
     find_package(TensorRTInferenceEngine HINTS ${CMAKE_SOURCE_DIR}/src/engines/tensorrt REQUIRED)
     # Add compiler definition to enable TensorRT
-    list(APPEND COMPILE_OPTIONS -DBLA=1)
+    list(APPEND COMPILE_OPTIONS -DUSE_TENSOR_RT=1)
     # Add TensorRTInferenceEngine to the list of engine libraries
     list(APPEND ENGINE_LIBRARIES TensorRTInferenceEngine)
 endif ()
